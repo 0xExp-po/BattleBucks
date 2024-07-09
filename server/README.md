@@ -1,12 +1,11 @@
-# Project Name
+# BattleBucks Backend
 
-A brief description of what this project does and who it's for.
 
 ## Prerequisites
 
 Before you begin, ensure you have met the following requirements:
 - Node.js installed (see [nodejs.org](https://nodejs.org/) for installation instructions)
-- A package manager like npm (comes with Node.js) or yarn
+- A package manager like npm (comes with Node.js) or yarn or bun
 
 ## Getting Started
 
