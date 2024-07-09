@@ -1,8 +1,5 @@
 import { CSSProperties } from "react";
-
-type Child = React.ReactElement | string | number;
-
-type Children = Child | (Child | Children)[];
+import { Children } from "../utils/types";
 
 interface PillProps {
   children: Children;

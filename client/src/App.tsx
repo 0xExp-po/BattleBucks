@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { useLocation, useRoutes } from "react-router-dom";
 import "./App.css"
 import Welcome from "./views/Welcome";
 import Profile from "./views/Profile";
@@ -9,25 +9,60 @@ import MatchHistory from "./views/MatchHistory";
 import VersusLobby from "./views/VersusLobby";
 import VersusBuyin from "./views/VersusBuyin";
 import GameEnd from "./views/GameEnd";
+import { AnimatePresence } from "framer-motion";
+import React from "react";
+import SlideRight from "./components/SlideRight";
 
 function App() {
+  const element = useRoutes([
+    {
+      path: "/",
+      element: <SlideRight><Welcome /></SlideRight>
+    },
+    {
+      path: "/profile",
+      element: <SlideRight><Profile /></SlideRight>
+    },
+    {
+      path: "/versus",
+      element: <SlideRight><Versus /></SlideRight>
+    },
+    {
+      path: "/vs/lobby",
+      element: <SlideRight><VersusLobby /></SlideRight>
+    },
+    {
+      path: "/vs/buyin",
+      element: <SlideRight><VersusBuyin /></SlideRight>
+    },
+    {
+      path: "/br",
+      element: <SlideRight><BattleRoyale /></SlideRight>
+    },
+    {
+      path: "/matches",
+      element: <SlideRight><MatchHistory /></SlideRight>
+    },
+    {
+      path: "/end",
+      element: <SlideRight><GameEnd /></SlideRight>
+    },
+  ]);
+
+  const location = useLocation();
+
+  if (!element) return <div></div>;
+
   return (
-    <BrowserRouter>
-      <div className="flexCol flex" style={{ overflow: "auto" }}>
-        <Routes>
-          <Route path="/" element={<Welcome />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/versus" element={<Versus />} />
-          <Route path="/vs/lobby" element={<VersusLobby />} />
-          <Route path="/vs/buyin" element={<VersusBuyin />} />
-          <Route path="/br" element={<BattleRoyale />} />
-          <Route path="/matches" element={<MatchHistory />} />
-          <Route path="/end" element={<GameEnd />} />
-        </Routes>
+    <>
+      <div className="flexCol flex" style={{ overflowX: "hidden" }}>
+        <AnimatePresence mode="wait" initial={false}>
+          {React.cloneElement(element, { key: location.pathname })}
+        </AnimatePresence>
         <div style={{ padding: "3em 0" }}></div>
       </div>
       <Navbar />
-    </BrowserRouter>
+    </>
   );
 }
 

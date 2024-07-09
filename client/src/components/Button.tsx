@@ -1,8 +1,6 @@
 import { CSSProperties } from "react";
+import { Children } from "../utils/types";
 
-type Child = React.ReactElement | string | number;
-
-type Children = Child | (Child | Children)[];
 
 interface ButtonProps {
   children: Children;
