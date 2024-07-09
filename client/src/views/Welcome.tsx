@@ -4,6 +4,7 @@ import { useNavigate } from "react-router";
 
 function Welcome() {
   const navigate = useNavigate();
+
   return (
     <div className="flexCol flex" style={{ margin: "1em" }}>
       <div style={{ display: "flex", gap: "0.25em", marginBottom: "2em" }}>
@@ -20,11 +21,11 @@ function Welcome() {
       </div>
       <h1>BattleBits</h1>
       <h4>Welcome back, <b style={{ color: "rgb(238, 188, 188)" }}>Player</b>!</h4>
-      <div className="flexCol" style={{ margin: "2em 0", gap: "1em"}}>
+      <div className="flexCol" style={{ margin: "2em 0", gap: "1em" }}>
         <Button type="big" onClick={() => navigate("/vs/lobby")}><b>1v1</b></Button>
         <Button type="big"><b>Battle Royale</b></Button>
       </div>
-      <Button onClick={() => navigate("/matches")}><div style={{ fontSize: "1em" }}>Match history</div></Button>
+      <Button onClick={() => navigate("/profile")}><div style={{ fontSize: "1em" }}>Profile</div></Button>
     </div>
   )
 };
