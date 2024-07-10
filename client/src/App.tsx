@@ -8,45 +8,45 @@ import MatchHistory from "./views/MatchHistory";
 import VersusLobby from "./views/VersusLobby";
 import VersusBuyin from "./views/VersusBuyin";
 import GameEnd from "./views/GameEnd";
-import SlideRight from "./components/SlideRight";
+import ViewTransition from "./components/ViewTransition";
+import Tutorial from "./views/Tutorial";
 import { useLocation, useRoutes } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import "./App.scss";
-import Tutorial from "./views/Tutorial";
 
 function App() {
   const element = useRoutes([
     {
       path: "/",
-      element: <SlideRight><Welcome /></SlideRight>
+      element: <ViewTransition><Welcome /></ViewTransition>
     },
     {
       path: "/profile",
-      element: <SlideRight><Profile /></SlideRight>
+      element: <ViewTransition><Profile /></ViewTransition>
     },
     {
       path: "/versus",
-      element: <SlideRight><Versus /></SlideRight>
+      element: <ViewTransition><Versus /></ViewTransition>
     },
     {
       path: "/vs/lobby",
-      element: <SlideRight><VersusLobby /></SlideRight>
+      element: <ViewTransition><VersusLobby /></ViewTransition>
     },
     {
       path: "/vs/buyin",
-      element: <SlideRight><VersusBuyin /></SlideRight>
+      element: <ViewTransition><VersusBuyin /></ViewTransition>
     },
     {
       path: "/br",
-      element: <SlideRight><BattleRoyale /></SlideRight>
+      element: <ViewTransition><BattleRoyale /></ViewTransition>
     },
     {
       path: "/matches",
-      element: <SlideRight><MatchHistory /></SlideRight>
+      element: <ViewTransition><MatchHistory /></ViewTransition>
     },
     {
       path: "/end",
-      element: <SlideRight><GameEnd /></SlideRight>
+      element: <ViewTransition><GameEnd /></ViewTransition>
     },
   ]);
 
@@ -63,7 +63,7 @@ function App() {
         <div style={{ padding: "3em 0" }}></div>
       </div>
       <Navbar />
-      {true && <Tutorial />}
+      {/* {true && <Tutorial />} */}
     </>
   );
 }

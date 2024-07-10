@@ -32,6 +32,10 @@
   color: black;
 }
 
+.colorfulBorder {
+  z-index: 1;
+}
+
 .colorfulBorder::before {
   content: '';
   position: absolute;
