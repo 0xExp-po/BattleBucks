@@ -1,17 +1,18 @@
-import { useLocation, useRoutes } from "react-router-dom";
-import "./App.css"
+import React from "react";
 import Welcome from "./views/Welcome";
 import Profile from "./views/Profile";
 import Versus from "./views/Versus";
 import BattleRoyale from "./views/BattleRoyale";
-import Navbar from "./components/Navbar";
+import Navbar from "./components/Navbar/Navbar";
 import MatchHistory from "./views/MatchHistory";
 import VersusLobby from "./views/VersusLobby";
 import VersusBuyin from "./views/VersusBuyin";
 import GameEnd from "./views/GameEnd";
-import { AnimatePresence } from "framer-motion";
-import React from "react";
 import SlideRight from "./components/SlideRight";
+import { useLocation, useRoutes } from "react-router-dom";
+import { AnimatePresence } from "framer-motion";
+import "./App.scss";
+import Tutorial from "./views/Tutorial";
 
 function App() {
   const element = useRoutes([
@@ -62,6 +63,7 @@ function App() {
         <div style={{ padding: "3em 0" }}></div>
       </div>
       <Navbar />
+      {true && <Tutorial />}
     </>
   );
 }

@@ -55,14 +55,13 @@ h4 {
 }
 
 button {
+  cursor: pointer;
   border: 1px solid transparent;
   font-size: 1em;
   font-family: inherit;
   transition: border-color 0.25s;
-}
-
-button:hover {
-  border-color: #646cff;
+  margin: 0;
+  padding: 0;
 }
 
 button:focus,
@@ -77,6 +76,7 @@ button:focus-visible {
 
 .flexRow {
   display: flex;
+  flex-direction: row;
 }
 
 .flexCol {
@@ -89,71 +89,25 @@ button:focus-visible {
   justify-content: center;
 }
 
-.pill,
-.button,
-.bigButton,
-.navbar {
-  border-radius: 20px;
-  padding: 0.6em 1.2em;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  box-shadow: 0 0 3px 1px #36393daa ;
-}
-
-.pill {
-  border-radius: 20px;
-  background-color: rgba(66, 66, 76, 0.8);
-}
-
-.button {
-  border-radius: 8px;
-  background-color: rgba(66, 66, 76, 0.8);
-}
-
-.bigButton {
-  border-radius: 8px;
-  min-height: 4em;
-  background-color: #fdf9ff;
-  color: black;
-  transition: 200ms;
-}
-
-.bigButton:active {
-  transform: scale(0.9);
-  background-color: #b8b1bb;
-  color: black;
-}
-
-.navbar {
-  display: flex;
-  flex: 0;
-  background-color: rgb(76, 75, 99, 0.8);
-  flex-direction: row;
-  justify-content: space-between;
-  height: 4em;
-  padding: 0.6em 0;
-
+.absoluteCenter {
   position: absolute;
-  width: 90%;
-  bottom: 1em;
   left: 0;
   right: 0;
   margin-left: auto;
   margin-right: auto;
 }
 
-.navbar img {
-  transition: 200ms;
+.standardBorderRadius {
+  border-radius: 20px;
 }
 
-.navbar img:hover {
-  filter: drop-shadow(0 0 0.75em #61dafbaa);
-}
-
-.navbar img:active {
-  filter: drop-shadow(0 0 0.5em #61dafbff);
+.pill {
+  @extend .flexCol;
+  @extend .center;
+  @extend .standardBorderRadius;
+  padding: 0.6em 1.2em;
+  box-shadow: 0 0 3px 1px #36393daa;
+  background-color: rgba(66, 66, 76, 0.8);
 }
 
 .divider {

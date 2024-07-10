@@ -1,5 +1,5 @@
 import viteLogo from "/vite.svg";
-import Button from "../components/Button";
+import Button from "../components/Button/Button";
 import { useNavigate } from "react-router";
 
 function Welcome() {
@@ -22,7 +22,7 @@ function Welcome() {
       <h1>BattleBits</h1>
       <h4>Welcome back, <b style={{ color: "rgb(238, 188, 188)" }}>Player</b>!</h4>
       <div className="flexCol" style={{ margin: "2em 0", gap: "1em" }}>
-        <Button type="big" onClick={() => navigate("/vs/lobby")}><b>1v1</b></Button>
+        <Button type="big" colorfulBorder onClick={() => navigate("/vs/lobby")}><b>1v1</b></Button>
         <Button type="big"><b>Battle Royale</b></Button>
       </div>
       <Button onClick={() => navigate("/profile")}><div style={{ fontSize: "1em" }}>Profile</div></Button>
