@@ -88,14 +88,20 @@ button:focus-visible {
   justify-content: center;
 }
 
+.absoluteCenter {
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin-left: auto;
+  margin-right: auto;
+}
+
 .pill,
 .navbar {
+  @include flexCol;
+  @include center;
   border-radius: 20px;
   padding: 0.6em 1.2em;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
   box-shadow: 0 0 3px 1px #36393daa;
 }
 
@@ -110,14 +116,12 @@ button:focus-visible {
 }
 
 .buttonInner {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex: 1;
+  @include flex;
+  @include center;
   font-weight: "bold";
   z-index: 1;
-  transition: inherit;
   width: 100%;
+  transition: inherit;
   border-radius: inherit;
 }
 
@@ -130,14 +134,12 @@ button:focus-visible {
 }
 
 .bigButton {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
+  @include flexCol;
+  @include center;
+  position: relative;
   border-radius: 8px;
   min-height: 4em;
   color: black;
-  position: relative;
 }
 
 .colorfulBorder::before {
@@ -182,6 +184,7 @@ button:focus-visible {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -191,6 +194,7 @@ button:focus-visible {
   from {
     opacity: 1;
   }
+
   to {
     opacity: 0;
   }
@@ -210,21 +214,15 @@ button:focus-visible {
 }
 
 .navbar {
-  display: flex;
+  @include flexRow;
+  @include absoluteCenter;
   flex: 0;
   background-color: rgb(76, 75, 99, 0.8);
-  flex-direction: row;
   justify-content: space-between;
   height: 4em;
   padding: 0.6em 0;
-
-  position: absolute;
   width: 90%;
   bottom: 1em;
-  left: 0;
-  right: 0;
-  margin-left: auto;
-  margin-right: auto;
 }
 
 .navbar img {
