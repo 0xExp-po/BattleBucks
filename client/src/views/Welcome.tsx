@@ -1,5 +1,5 @@
 import viteLogo from "/vite.svg";
-import Button from "../components/Button";
+import Button from "../components/Button/Button";
 import { useNavigate } from "react-router";
 
 function Welcome() {

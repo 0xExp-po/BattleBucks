@@ -1,7 +1,7 @@
 import Rock from "../assets/rock.png";
 import Paper from "../assets/paper.png";
 import Scissors from "../assets/scissors.png";
-import Button from "../components/Button";
+import Button from "../components/Button/Button";
 
 function Versus() {
   return (

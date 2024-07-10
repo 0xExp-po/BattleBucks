@@ -76,6 +76,7 @@ button:focus-visible {
 
 .flexRow {
   display: flex;
+  flex-direction: row;
 }
 
 .flexCol {
@@ -96,145 +97,17 @@ button:focus-visible {
   margin-right: auto;
 }
 
-.pill,
-.navbar {
-  @include flexCol;
-  @include center;
+.standardBorderRadius {
   border-radius: 20px;
-  padding: 0.6em 1.2em;
-  box-shadow: 0 0 3px 1px #36393daa;
 }
 
 .pill {
-  border-radius: 20px;
-  background-color: rgba(66, 66, 76, 0.8);
-}
-
-.button,
-.bigButton {
-  transition: 200ms;
-}
-
-.buttonInner {
-  @include flex;
-  @include center;
-  font-weight: "bold";
-  z-index: 1;
-  width: 100%;
-  transition: inherit;
-  border-radius: inherit;
-}
-
-.button {
-  border-radius: 8px;
-}
-
-.button>.buttonInner {
-  background-color: rgba(66, 66, 76, 0.8);
-}
-
-.bigButton {
-  @include flexCol;
-  @include center;
-  position: relative;
-  border-radius: 8px;
-  min-height: 4em;
-  color: black;
-}
-
-.colorfulBorder::before {
-  content: '';
-  position: absolute;
-  top: -3px;
-  bottom: -3px;
-  left: -3px;
-  right: -3px;
-  animation: ease-in-out 2s infinite alternate show;
-  background: linear-gradient(225deg,
-      #ff0000,
-      #ff9900,
-      #ffff00,
-      #33cc33,
-      #3399ff,
-      #6600cc);
-  z-index: -1;
-  border-radius: inherit;
-}
-
-.colorfulBorder::after {
-  content: '';
-  position: absolute;
-  top: -3px;
-  bottom: -3px;
-  left: -3px;
-  right: -3px;
-  animation: ease-in-out 2s infinite alternate hide;
-  background: linear-gradient(45deg,
-      #ff0000,
-      #ff9900,
-      #ffff00,
-      #33cc33,
-      #3399ff,
-      #6600cc);
-  z-index: -1;
-  border-radius: inherit;
-}
-
-@keyframes show {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes hide {
-  from {
-    opacity: 1;
-  }
-
-  to {
-    opacity: 0;
-  }
-}
-
-.bigButton:active {
-  transform: scale(0.9);
-  background-color: #b8b1bb;
-}
-
-.bigButton>.buttonInner {
-  background-color: #fdf9ff;
-}
-
-.buttonInner>div {
+  @extend .flexCol;
+  @extend .center;
+  @extend .standardBorderRadius;
   padding: 0.6em 1.2em;
-}
-
-.navbar {
-  @include flexRow;
-  @include absoluteCenter;
-  flex: 0;
-  background-color: rgb(76, 75, 99, 0.8);
-  justify-content: space-between;
-  height: 4em;
-  padding: 0.6em 0;
-  width: 90%;
-  bottom: 1em;
-}
-
-.navbar img {
-  transition: 200ms;
-}
-
-.navbar img:hover {
-  filter: drop-shadow(0 0 0.75em #61dafbaa);
-}
-
-.navbar img:active {
-  filter: drop-shadow(0 0 0.5em #61dafbff);
+  box-shadow: 0 0 3px 1px #36393daa;
+  background-color: rgba(66, 66, 76, 0.8);
 }
 
 .divider {

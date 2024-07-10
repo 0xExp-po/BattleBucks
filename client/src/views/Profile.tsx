@@ -1,4 +1,4 @@
-import Button from "../components/Button";
+import Button from "../components/Button/Button";
 import Pill from "../components/Pill";
 import ProfilePic from "../assets/profile.png"
 
