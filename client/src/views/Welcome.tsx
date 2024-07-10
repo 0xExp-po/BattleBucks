@@ -1,9 +1,12 @@
 import viteLogo from "/vite.svg";
 import Button from "../components/Button";
 import { useNavigate } from "react-router";
+import { trpc } from "../trpc/trpc";
 
 function Welcome() {
   const navigate = useNavigate();
+  const { data, error, isLoading } = trpc.test.useQuery({ hello: " hi" })
+  console.log(data, error, isLoading);
 
   return (
     <div className="flexCol flex" style={{ margin: "1em" }}>
@@ -28,6 +31,6 @@ function Welcome() {
       <Button onClick={() => navigate("/profile")}><div style={{ fontSize: "1em" }}>Profile</div></Button>
     </div>
   )
-};
+}
 
 export default Welcome;

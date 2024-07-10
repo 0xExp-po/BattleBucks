@@ -5,6 +5,7 @@ import * as trpcExpress from "@trpc/server/adapters/express";
 import { inferAsyncReturnType, initTRPC } from '@trpc/server';
 import { createContext } from './context';
 import { expressHandler } from "trpc-playground/handlers/express";
+import { PrismaClient } from '@prisma/client';
 const app = express();
 
 
@@ -18,6 +19,7 @@ const TRPC_ENDPOINT = "/trpc";
 const TRPC_PLAYGROUND_ENDPOINT = "/trpc-playground";
 type Context = inferAsyncReturnType<typeof createContext>;
 export const t = initTRPC.context<Context>().create()
+export const prisma = new PrismaClient()
 
 app.use(cors({ origin: "*" }));
 app.use(

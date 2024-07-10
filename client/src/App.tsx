@@ -12,6 +12,7 @@ import GameEnd from "./views/GameEnd";
 import { AnimatePresence } from "framer-motion";
 import React from "react";
 import SlideRight from "./components/SlideRight";
+import { getQueryClient } from "@trpc/react-query/shared";
 
 function App() {
   const element = useRoutes([
@@ -48,10 +49,12 @@ function App() {
       element: <SlideRight><GameEnd /></SlideRight>
     },
   ]);
-
   const location = useLocation();
 
+
   if (!element) return <div></div>;
+
+
 
   return (
     <>
