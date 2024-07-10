@@ -12,6 +12,7 @@ import SlideRight from "./components/SlideRight";
 import { useLocation, useRoutes } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import "./App.scss";
+import Tutorial from "./views/Tutorial";
 
 function App() {
   const element = useRoutes([
@@ -62,6 +63,7 @@ function App() {
         <div style={{ padding: "3em 0" }}></div>
       </div>
       <Navbar />
+      {true && <Tutorial />}
     </>
   );
 }
