@@ -116,40 +116,14 @@ button:focus-visible {
   width: 0;
 }
 
-.selectable {
-  flex: 1;
-}
-
-.rps {
-  height: 40vw;
-  will-change: filter;
-  transition: filter 300ms;
-}
-
-.rps:hover {
-  animation: shake 100ms linear infinite alternate;
-}
-
-@keyframes shake {
-  from {
-    transform: translateX(-3vw);
-  }
-
-  to {
-    transform: translateX(3vw);
-  }
-}
-
-.rock:hover {
-  filter: drop-shadow(0 0 2em #a8a8b8aa);
-}
-
-.paper:hover {
-  filter: drop-shadow(0 0 2em #ffffffaa);
-}
-
-.scissors:hover {
-  filter: drop-shadow(0 0 2em #30303dff);
+.table {
+  width: 8em;
+  height: 8em;
+  border-radius: 10px;
+  border: 5px solid rgb(51, 92, 215);
+  background-color: rgb(15, 38, 107);
+  background: radial-gradient(circle, rgb(15, 38, 107) 0%, rgb(14, 34, 95) 50%);
+  margin: 0.5em;
 }
 
 .win {

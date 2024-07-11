@@ -1,9 +1,15 @@
 import viteLogo from "/vite.svg";
 import Button from "../components/Button/Button";
 import { useNavigate } from "react-router";
+import useTelegramUser from "../hooks/useTelegramUser";
+import { useLanguage } from "../hooks/useLocalization";
+import { LanguageString } from "../utils/types";
 
 function Welcome() {
   const navigate = useNavigate();
+  const user = useTelegramUser();
+
+  const { l } = useLanguage();
 
   return (
     <div className="flexCol flex" style={{ margin: "1em" }}>
@@ -20,7 +26,7 @@ function Welcome() {
         </a>
       </div>
       <h1>BattleBits</h1>
-      <h4>Welcome back, <b style={{ color: "rgb(238, 188, 188)" }}>Player</b>!</h4>
+      <h4>{l(LanguageString.welcomeBack)}, <b style={{ color: "rgb(238, 188, 188)" }}>{user?.first_name ?? "Player"}</b>!</h4>
       <div className="flexCol" style={{ margin: "2em 0", gap: "1em" }}>
         <Button type="big" colorfulBorder onClick={() => navigate("/vs/lobby")}><b>1v1</b></Button>
         <Button type="big"><b>Battle Royale</b></Button>
