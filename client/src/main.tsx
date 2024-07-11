@@ -4,6 +4,8 @@ import App from "./App.tsx";
 import { BrowserRouter } from "react-router-dom";
 import "./index.scss";
 
+window.Telegram.WebApp.ready();
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <BrowserRouter>

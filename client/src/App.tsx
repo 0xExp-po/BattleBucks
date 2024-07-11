@@ -3,13 +3,11 @@ import Welcome from "./views/Welcome";
 import Profile from "./views/Profile";
 import Versus from "./views/Versus/Versus";
 import BattleRoyale from "./views/BattleRoyale";
-import Navbar from "./components/Navbar/Navbar";
 import MatchHistory from "./views/MatchHistory";
 import VersusLobby from "./views/VersusLobby";
 import VersusBuyin from "./views/VersusBuyin";
 import GameEnd from "./views/GameEnd";
 import ViewTransition from "./components/ViewTransition";
-import Tutorial from "./views/Tutorial";
 import { useLocation, useRoutes } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import "./App.scss";
@@ -60,9 +58,7 @@ function App() {
         <AnimatePresence mode="wait" initial={false}>
           {React.cloneElement(element, { key: location.pathname })}
         </AnimatePresence>
-        <div style={{ padding: "3em 0" }}></div>
       </div>
-      <Navbar />
       {/* {true && <Tutorial />} */}
     </>
   );
