@@ -2,11 +2,11 @@ import { z } from "zod";
 
 import { publicProcedure, router } from "./index";
 import { createUser } from "./createUser";
-import { matchPlayer } from "./matchPlayer";
-import { selectBet } from "./selectBet";
+import { newMatch } from "./newMatch";
 import { gamePlay } from "./gamePlay";
 import { updateWinner } from "./updateWinner";
 import { searchPlayer } from "./searchPlayer";
+import { getProfile } from "./getProfile";
 
 // combined router
 export const appRouter = router({
@@ -22,10 +22,10 @@ export const appRouter = router({
             return helloValue;
         }),
     createUser: createUser,
-    matchPlayer: matchPlayer,
-    selectBet: selectBet,
+    newMatch: newMatch,
+    getProfile: getProfile,
     searchPlayer: searchPlayer,
-    gamePlay: gamePlay,
+    // gamePlay: gamePlay,
     updateWinner: updateWinner,
     // sample: sampleRouter,
 });

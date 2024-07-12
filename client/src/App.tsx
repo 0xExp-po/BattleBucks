@@ -10,9 +10,10 @@ import GameEnd from "./views/GameEnd";
 import ViewTransition from "./components/ViewTransition";
 import { useLocation, useRoutes } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
-import "./App.scss";
 import { LanguageContext, LANUGAGE_ENGLISH } from "./hooks/useLocalization";
 import { LanguageString } from "./utils/types";
+import { getQueryClient } from "@trpc/react-query/shared";
+import "./App.scss";
 
 function App() {
   const element = useRoutes([
@@ -64,6 +65,8 @@ function App() {
   }
 
   if (!element) return <div></div>;
+
+
 
   return (
     <LanguageContext.Provider value={{ l: getString, setLanguage }}>

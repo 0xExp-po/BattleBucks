@@ -1,15 +1,19 @@
 import viteLogo from "/vite.svg";
 import Button from "../components/Button/Button";
-import { useNavigate } from "react-router";
 import useTelegramUser from "../hooks/useTelegramUser";
+import { useNavigate } from "react-router";
 import { useLanguage } from "../hooks/useLocalization";
 import { LanguageString } from "../utils/types";
+import { trpc } from "../trpc/trpc";
 
 function Welcome() {
   const navigate = useNavigate();
   const user = useTelegramUser();
 
   const { l } = useLanguage();
+    
+  const { data, error, isLoading } = trpc.test.useQuery({ hello: " hi" });
+  console.log(data, error, isLoading);
 
   return (
     <div className="flexCol flex" style={{ margin: "1em" }}>
@@ -34,6 +38,6 @@ function Welcome() {
       <Button onClick={() => navigate("/profile")}><div style={{ fontSize: "1em" }}>Profile</div></Button>
     </div>
   )
-};
+}
 
 export default Welcome;
