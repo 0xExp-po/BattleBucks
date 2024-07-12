@@ -1,0 +1,109 @@
+@import "../../index.scss";
+
+.button,
+.bigButton {
+  transition: 200ms;
+}
+
+.buttonInner {
+  @extend .flex;
+  @extend .center;
+  font-weight: "bold";
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  transition: inherit;
+  border-radius: inherit;
+}
+
+.button {
+  border-radius: 8px;
+}
+
+.button>.buttonInner {
+  background-color: rgba(66, 66, 76, 0.8);
+}
+
+.bigButton {
+  @extend .flexCol;
+  @extend .center;
+  position: relative;
+  border-radius: 8px;
+  min-height: 4em;
+  color: black;
+}
+
+.colorfulBorder {
+  z-index: 1;
+}
+
+.colorfulBorder::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  left: -3px;
+  right: -3px;
+  animation: ease-in-out 2s infinite alternate show;
+  background: linear-gradient(225deg,
+      #ff0000,
+      #ff9900,
+      #ffff00,
+      #33cc33,
+      #3399ff,
+      #6600cc);
+  z-index: -1;
+  border-radius: inherit;
+}
+
+.colorfulBorder::after {
+  content: '';
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  left: -3px;
+  right: -3px;
+  animation: ease-in-out 2s infinite alternate hide;
+  background: linear-gradient(45deg,
+      #ff0000,
+      #ff9900,
+      #ffff00,
+      #33cc33,
+      #3399ff,
+      #6600cc);
+  z-index: -1;
+  border-radius: inherit;
+}
+
+@keyframes show {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes hide {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+.bigButton:active {
+  transform: scale(0.9);
+  background-color: #b8b1bb;
+}
+
+.bigButton>.buttonInner {
+  background-color: #fdf9ff;
+}
+
+.buttonInner>div {
+  padding: 0.6em 1.2em;
+}

@@ -1,0 +1,62 @@
+@import "../../index.scss";
+
+.selectable {
+  @extend .flexCol;
+  @extend .flex;
+  @extend .center;
+  width: 4em;
+  height: 6em;
+  background-color: white;
+  border-radius: 10px;
+  border: 5px solid grey;
+  will-change: filter;
+  transition: filter 300ms;
+  font-weight: bold;
+  text-shadow: 0 0 5px black;
+}
+
+.rps {
+  height: 60%;
+}
+
+.rps:hover {
+  animation: shake 100ms linear infinite alternate;
+}
+
+@keyframes shake {
+  from {
+    transform: translateX(-3vw);
+  }
+
+  to {
+    transform: translateX(3vw);
+  }
+}
+
+$color-rock: rgb(204, 111, 97);
+$color-paper: rgb(215, 203, 99);
+$color-scissors: rgb(116, 161, 220);
+
+.rock {
+  background-color: $color-rock;
+}
+
+.rock:hover {
+  filter: drop-shadow(0 0 1em $color-rock);
+}
+
+.paper {
+  background-color: $color-paper;
+}
+
+.paper:hover {
+  filter: drop-shadow(0 0 1em $color-paper);
+}
+
+.scissors {
+  background-color: $color-scissors;
+}
+
+.scissors:hover {
+  filter: drop-shadow(0 0 1em $color-scissors);
+}

@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router";
-import reactLogo from "../assets/react.svg";
 import { Fragment } from "react/jsx-runtime";
+import reactLogo from "../../assets/react.svg";
+import "./Navbar.scss";
 
 function Navbar() {
   const navigate = useNavigate();
