@@ -8,12 +8,15 @@ datasource db {
 }
 
 model User {
-  id                   Int           @id @default(autoincrement())
-  name                 String        @unique
+  id                   String        @id @default(uuid()) @db.Char(36)
+  name                 String        @db.VarChar(255)
   username             String        @unique
   phoneNo              String?       @unique
   profilePicture       String?
   bio                  String?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+  isOnline             Boolean       @default(true)
   firstPlayer          Game[]        @relation("firstPlayer")
   secondPlayer         Game[]        @relation("secondPlayer")
   winner               Game[]        @relation("winner")
@@ -21,19 +24,18 @@ model User {
   receivedTransactions Transaction[] @relation("receiver")
   sentTransactions     Transaction[] @relation("sender")
   transactions         Transaction[] @relation("transactions")
-  createdAt            DateTime      @default(now())
-  updatedAt            DateTime      @updatedAt
 }
 
 model Game {
   id             Int       @id @default(autoincrement())
   buyIn          Float
   maxPlayers     Int
-  firstPlayerId  Int
-  secondPlayerId Int?
-  winnerId       Int?
+  firstPlayerId  String
+  secondPlayerId String?
+  winnerId       String?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
+  gameType       GameType  @default(v1v1)
   firstPlayer    User      @relation("firstPlayer", fields: [firstPlayerId], references: [id])
   secondPlayer   User?     @relation("secondPlayer", fields: [secondPlayerId], references: [id])
   winner         User?     @relation("winner", fields: [winnerId], references: [id])
@@ -47,7 +49,7 @@ model Game {
 model GameLog {
   id        Int      @id @default(autoincrement())
   gameId    Int
-  playerId  Int
+  playerId  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   game      Game     @relation(fields: [gameId], references: [id])
@@ -60,9 +62,9 @@ model GameLog {
 model Transaction {
   id         Int      @id @default(autoincrement())
   amount     Float
-  senderId   Int
-  receiverId Int
-  userId     Int
+  senderId   String
+  receiverId String
+  userId     String
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   receiver   User     @relation("receiver", fields: [receiverId], references: [id])
@@ -72,4 +74,9 @@ model Transaction {
   @@index([receiverId], map: "Transaction_receiverId_fkey")
   @@index([senderId], map: "Transaction_senderId_fkey")
   @@index([userId], map: "Transaction_userId_fkey")
+}
+
+enum GameType {
+  v1v1
+  BattleRoyale
 }
