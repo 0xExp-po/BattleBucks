@@ -14,6 +14,7 @@ function ViewTransition(props: SlideRightChildren) {
       animate={{ opacity: 1, transition: { duration: 0.1, ease: "easeOut" } }}
       exit={{ opacity: 0, transition: { duration: 0.1, ease: "easeOut" } }}
       style={{ opacity: isPresent ? 0 : 1 }}
+      className="flex"
     >
       {props.children}
     </motion.div>

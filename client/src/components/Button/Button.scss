@@ -1,8 +1,7 @@
 @import "../../index.scss";
 
-.button,
-.bigButton {
-  transition: 200ms;
+button:disabled:active {
+  transform: initial;
 }
 
 .buttonInner {
@@ -16,13 +15,18 @@
   border-radius: inherit;
 }
 
-.button {
+// normalButton
+
+.normalButton {
   border-radius: 8px;
+  transition: 200ms;
 }
 
-.button>.buttonInner {
+.normalButton>.buttonInner {
   background-color: rgba(66, 66, 76, 0.8);
 }
+
+// big button
 
 .bigButton {
   @extend .flexCol;
@@ -31,11 +35,35 @@
   border-radius: 8px;
   min-height: 4em;
   color: black;
+  transition: 200ms;
+}
+
+.bigButton:active {
+  transform: scale(0.9);
+  background-color: #b8b1bb;
+}
+
+.bigButton>.buttonInner {
+  background-color: #fdf9ff;
+}
+
+// accept button
+
+.acceptButton {
+  @extend .normalButton;
+  background-color: #33cc33;
+  box-shadow: 1px 1px 2px 2px rgba(66, 66, 66, 0.5);
+}
+
+.acceptButton:active {
+  transform: scaleX(1.04) scaleY(0.85);
 }
 
 .colorfulBorder {
   z-index: 1;
 }
+
+// rainbow border
 
 .colorfulBorder::before {
   content: '';
@@ -93,15 +121,6 @@
   to {
     opacity: 0;
   }
-}
-
-.bigButton:active {
-  transform: scale(0.9);
-  background-color: #b8b1bb;
-}
-
-.bigButton>.buttonInner {
-  background-color: #fdf9ff;
 }
 
 .buttonInner>div {

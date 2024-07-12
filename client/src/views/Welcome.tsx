@@ -13,7 +13,7 @@ function Welcome() {
   const { l } = useLanguage();
     
   const { data, error, isLoading } = trpc.test.useQuery({ hello: " hi" });
-  console.log(data, error, isLoading);
+  console.log("in welcome:", data, error, isLoading);
 
   return (
     <div className="flexCol flex" style={{ margin: "1em" }}>

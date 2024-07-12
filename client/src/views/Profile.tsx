@@ -1,6 +1,6 @@
 import Button from "../components/Button/Button";
 import Pill from "../components/Pill";
-import ProfilePic from "../assets/profile.png"
+import Avatar from "../components/Avatar";
 
 function Profile() {
   const fights = [
@@ -19,9 +19,7 @@ function Profile() {
     <div className="flexCol flex" style={{ margin: "3em 1em", gap: "1em" }}>
       <div className="flexRow flex" style={{ gap: "1em" }}>
         <Pill className="flex">
-          <div style={{ borderRadius: 999, width: "7em", height: "7em", border: "1px solid grey" }}>
-            <img style={{ borderRadius: 999, width: "100%", height: "100%" }} src={ProfilePic}></img>
-          </div>
+          <Avatar />
           <h3>Player</h3>
           <h4>Level 4 - 3340 XP</h4>
         </Pill>
