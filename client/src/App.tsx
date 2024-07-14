@@ -10,10 +10,16 @@ import GameEnd from "./views/GameEnd";
 import ViewTransition from "./components/ViewTransition";
 import { useLocation, useRoutes } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
+import React, { useEffect } from "react";
+import SlideRight from "./components/SlideRight";
+import { getQueryClient } from "@trpc/react-query/shared";
+import { socket } from "./utils/socket";
+
 import { LanguageContext, LANUGAGE_ENGLISH } from "./hooks/useLocalization";
 import { LanguageString } from "./utils/types";
 import { getQueryClient } from "@trpc/react-query/shared";
 import "./App.scss";
+
 
 function App() {
   const element = useRoutes([
@@ -65,7 +71,6 @@ function App() {
   }
 
   if (!element) return <div></div>;
-
 
 
   return (
