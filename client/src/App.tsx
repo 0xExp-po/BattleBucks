@@ -10,9 +10,10 @@ import VersusLobby from "./views/VersusLobby";
 import VersusBuyin from "./views/VersusBuyin";
 import GameEnd from "./views/GameEnd";
 import { AnimatePresence } from "framer-motion";
-import React from "react";
+import React, { useEffect } from "react";
 import SlideRight from "./components/SlideRight";
 import { getQueryClient } from "@trpc/react-query/shared";
+import { socket } from "./utils/socket";
 
 function App() {
   const element = useRoutes([
@@ -53,7 +54,6 @@ function App() {
 
 
   if (!element) return <div></div>;
-
 
 
   return (

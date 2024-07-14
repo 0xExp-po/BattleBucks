@@ -2,11 +2,25 @@ import viteLogo from "/vite.svg";
 import Button from "../components/Button";
 import { useNavigate } from "react-router";
 import { trpc } from "../trpc/trpc";
+import { useEffect } from "react";
+import { socket } from "../utils/socket";
 
 function Welcome() {
   const navigate = useNavigate();
   const { data, error, isLoading } = trpc.test.useQuery({ hello: " hi" })
   console.log(data, error, isLoading);
+  useEffect(() => {
+    socket.on("connect", () => {
+      console.log("connected to socket");
+    });
+    socket.emit("newGame", {
+      betAmount : 20,
+      gameType : "BattleRoyale",
+      userName : '@VJBass',
+      matchType : "MatchMaking",
+    });
+  }, []);
+
 
   return (
     <div className="flexCol flex" style={{ margin: "1em" }}>
