@@ -1,0 +1,26 @@
+@import "../../index.scss";
+
+.navbar {
+    @extend .flexRow;
+    @extend .absoluteCenter;
+    @extend .standardBorderRadius;
+    flex: 0;
+    background-color: rgb(76, 75, 99, 0.8);
+    justify-content: space-between;
+    height: 4em;
+    padding: 0.6em 0;
+    width: 90%;
+    bottom: 1em;
+}
+
+.navbar img {
+    transition: 200ms;
+}
+
+.navbar img:hover {
+    filter: drop-shadow(0 0 0.75em #61dafbaa);
+}
+
+.navbar img:active {
+    filter: drop-shadow(0 0 0.5em #61dafbff);
+}
