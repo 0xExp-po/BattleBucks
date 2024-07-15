@@ -26,22 +26,44 @@ export const prisma = new PrismaClient()
 
 const io = new Server({
   cors: {
-    origin: ["http://localhost:5173"],
+    origin: "*" ||  ["http://localhost:5173"],
   },
 });
 
+io.listen(5001);
+
 io.on("connection", (socket) => {
   console.log(`socket ${socket.id} connected`);
-  // send an event to the client
-  socket.emit("foo", "bar");
 
-  socket.on("foobar", () => {
-    // an event was received from the client
-    console.log("hiiii");
-  });
+  socket.on("userOnline" , async (data) => {
+    console.log(data);
+    const result = await prisma.user.update({
+      where: {
+        username: data.userName
+      },
+      data: {
+        isOnline: true
+      }
+    });
+    console.log(result);
+  })
+
+  socket.on("userOffline" , async (data) => {
+    console.log(data);
+    const result = await prisma.user.update({
+      where: {
+        username: data.userName
+      },
+      data: {
+        isOnline: false
+      }
+    });
+    console.log(result);
+  })
 
   socket.on("newGame", async (data) => {
-    const { userName, gameType, betAmount, totalPlayers, matchType } = data;
+    console.log(data);
+    const { userName, gameType, totalPlayers, buyIn, matchType } = data;
     let firstPlayer, secondPlayer;
 
     if (matchType === "MatchMaking") {
@@ -57,6 +79,7 @@ io.on("connection", (socket) => {
                 username: userName
             }
         });
+        console.log("First Player", firstPlayer)
         secondPlayer = await prisma.user.findFirst({
             select: {
                 id: true,
@@ -71,33 +94,44 @@ io.on("connection", (socket) => {
                 },
             }
         })
+        console.log("Second Player", secondPlayer)
     }
+    socket.emit(`newGameReq-${secondPlayer?.id}` , {firstPlayer})
 
+})
+
+    // player two accpeted
+    socket.on(`acceptRequest` , async (data) => {
+      const { buyIn, totalPlayers, firstPlayer, secondPlayer, gameType } = data
     try {
         const game = await prisma.game.create({
             data: {
-                buyIn: betAmount,
+                buyIn : buyIn,
                 maxPlayers: totalPlayers || 2,
                 firstPlayerId: firstPlayer?.id!,
                 secondPlayerId: secondPlayer?.id,
                 gameType: gameType,
+            },
+            include : {
+              firstPlayer: true,
+              secondPlayer: true
             }
         });
 
 
         // Ensure gameId and playerTwo are not undefined
         if (typeof game.id === "undefined" || typeof game.secondPlayerId === "undefined") {
-            throw new Error("Game ID or Player Two ID is undefined");
+          io.emit("gameError", "Game ID or Player Two ID is undefined");
         }
-    console.log(data);
-    io.emit("matchPlayer", data);
+    io.emit("matchPlayer", game);
   } catch (error) {
     console.log("Error creating game:", error);
+    io.emit("gameError", error);
     }
-})
+    })
 
 // TODO:
-socket.on("gameMove", async (data) => {
+socket.on("gamePlay", async (data) => {
     const { matchId, playerOnePlay, playerTwoPlay } = data;
     socket.join(`gameRoom-${matchId}`);
 
@@ -201,7 +235,14 @@ socket.on("gameMove", async (data) => {
 });
 });
 
-io.listen(5001);
+// MIDDLEWARE
+io.use((socket, next) => {
+  let token = socket.handshake.query.key;
+  if (token === process.env.SOCKET_TOKEN) {
+    next();
+  }
+})
+
 
 
 app.use(cors({ origin: "*" }));

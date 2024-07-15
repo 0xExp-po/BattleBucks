@@ -26,7 +26,7 @@ export const appRouter = router({
     getProfile: getProfile,
     searchPlayer: searchPlayer,
     // gamePlay: gamePlay,
-    updateWinner: updateWinner,
+    // updateWinner: updateWinner,
     // sample: sampleRouter,
 });
 
