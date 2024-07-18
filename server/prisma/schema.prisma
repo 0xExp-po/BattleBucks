@@ -27,8 +27,8 @@ model User {
 }
 
 model Game {
-  id             Int       @id @default(autoincrement())
-  buyIn          Float
+  id             String    @id @default(uuid())
+  buyIn          Float?    @default(0)
   maxPlayers     Int
   firstPlayerId  String
   secondPlayerId String?
@@ -48,7 +48,7 @@ model Game {
 
 model GameLog {
   id        Int      @id @default(autoincrement())
-  gameId    Int
+  gameId    String
   playerId  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
