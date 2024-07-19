@@ -4,6 +4,8 @@ import useTelegramUser from "../hooks/useTelegramUser";
 import { useNavigate } from "react-router";
 import { useLanguage } from "../hooks/useLocalization";
 import { LanguageString } from "../utils/types";
+import Logo from "../components/Logo/Logo";
+import LanguageBubble from "../LanguageBubble/LanguageBubble";
 
 
 function Welcome() {
@@ -21,13 +23,13 @@ function Welcome() {
           <div style={{ fontWeight: "bold" }}>Normal</div>
         </Button>
       </div>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
+      <div style={{ display: "flex", position: "relative" }}>
+        <div style={{ position: "absolute", right: 0, zIndex: 1 }}>
+          <LanguageBubble />
+        </div>
+        <Logo />
       </div>
-      <h1>BattleBits</h1>
-      <h4>{l(LanguageString.welcomeBack)}, <b style={{ color: "rgb(238, 188, 188)" }}>{user?.first_name ?? "Player"}</b>!</h4>
+      <h4>{l(LanguageString.welcomeBack)}, <b style={{ color: "rgb(229, 243, 255)" }}>{user?.first_name ?? "Player"}</b>!</h4>
       <div className="flexCol" style={{ margin: "2em 0", gap: "1em" }}>
         <Button type="big" colorfulBorder onClick={() => navigate("/vs/lobby")}><b>1v1</b></Button>
         <Button type="big"><b>Battle Royale</b></Button>

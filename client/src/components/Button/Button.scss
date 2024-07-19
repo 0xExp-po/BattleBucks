@@ -4,15 +4,23 @@ button:disabled:active {
   transform: initial;
 }
 
-.buttonInner {
+.buttonInner, .buttonInnerBgDarken {
   @extend .flex;
   @extend .center;
-  font-weight: "bold";
-  z-index: 1;
   width: 100%;
   height: 100%;
   transition: inherit;
   border-radius: inherit;
+  font-weight: bold;
+  z-index: 1;
+}
+
+.buttonInnerBgDarken:hover {
+  background-color: #00000011;
+}
+
+.buttonInnerBgDarken>div {
+  padding: 0.6em 1.2em;
 }
 
 // normalButton
@@ -23,7 +31,9 @@ button:disabled:active {
 }
 
 .normalButton>.buttonInner {
-  background-color: rgba(66, 66, 76, 0.8);
+  //background-color: rgba(66, 66, 76, 0.8);
+  background-color: $colorMain2;
+  color: $colorFgDark;
 }
 
 // big button
@@ -34,17 +44,17 @@ button:disabled:active {
   position: relative;
   border-radius: 8px;
   min-height: 4em;
-  color: black;
+  color: $colorFgDark;
   transition: 200ms;
+}
+
+.bigButton>.buttonInner {
+  //background-color: #fdf9ff;
+  background-color: $colorBigButton;
 }
 
 .bigButton:active {
   transform: scale(0.9);
-  background-color: #b8b1bb;
-}
-
-.bigButton>.buttonInner {
-  background-color: #fdf9ff;
 }
 
 // accept button
@@ -61,6 +71,17 @@ button:disabled:active {
 
 .colorfulBorder {
   z-index: 1;
+}
+
+// cancel button
+
+.cancelButton {
+  @extend .normalButton;
+  box-shadow: 1px 1px 2px 2px rgba(66, 66, 66, 0.5);
+}
+
+.cancelButton:active {
+  transform: scale(0.9);
 }
 
 // rainbow border
@@ -121,8 +142,4 @@ button:disabled:active {
   to {
     opacity: 0;
   }
-}
-
-.buttonInner>div {
-  padding: 0.6em 1.2em;
 }

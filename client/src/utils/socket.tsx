@@ -1,44 +1,43 @@
 import React, { createContext, useEffect } from "react"
 import io from "socket.io-client";
+
 const BaseUrl = "http://localhost:5001";
-const socket = io(BaseUrl ,{
- query: {
-  // move this to env
-  key : 12345
- }
+
+const socket = io(BaseUrl, {
+  query: {
+    // move this to env
+    key: 12345
+  }
 });
-
-
 
 const SocketContext = createContext(null);
 
 export default SocketContext;
 
 
-export const SocketProvider = ({children} : {children : React.ReactNode}) => {
-
-   useEffect(() => {
+export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
+  useEffect(() => {
     socket.on("connect", () => {
       console.log("connected to socket");
     });
-      // Function to handle cleanup actions
-      const handleCleanup = () => {
-       socket.emit("userOffline", {userName : "@VJBass"});
-       socket.disconnect();
-     };
+    // Function to handle cleanup actions
+    const handleCleanup = () => {
+      socket.emit("userOffline", { userName: "@VJBass" });
+      socket.disconnect();
+    };
 
-     window.addEventListener('beforeunload', handleCleanup);
+    window.addEventListener('beforeunload', handleCleanup);
 
 
     socket.on("disconnect", () => {
       console.log("disconnected from socket");
     })
-    socket.emit("userOnline", {userName : "@VJBass"});
-   }, []);
+    socket.emit("userOnline", { userName: "VJBass" });
+  }, []);
 
-    return (
-        <SocketContext.Provider value={socket}>
-            {children}
-        </SocketContext.Provider>
-    )
+  return (
+    <SocketContext.Provider value={socket}>
+      {children}
+    </SocketContext.Provider>
+  )
 }

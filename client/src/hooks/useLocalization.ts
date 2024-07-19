@@ -11,9 +11,11 @@ export const LANUGAGE_RUSSIAN: Language = {
 
 export const LanguageContext = createContext<{
   l: (s: LanguageString, ...s2: string[]) => string,
+  language: Language,
   setLanguage: React.Dispatch<React.SetStateAction<Language>>
 }>({
   l: (s) => s,
+  language: LANUGAGE_ENGLISH,
   setLanguage: (l) => l,
 });
 

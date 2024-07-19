@@ -12,8 +12,6 @@ import { useLocation, useRoutes } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { LanguageContext, LANUGAGE_ENGLISH } from "./hooks/useLocalization";
 import { LanguageString } from "./utils/types";
-import "./App.scss";
-
 
 function App() {
   const element = useRoutes([
@@ -51,12 +49,12 @@ function App() {
     },
   ]);
 
-  const [l, setLanguage] = useState(LANUGAGE_ENGLISH);
+  const [language, setLanguage] = useState(LANUGAGE_ENGLISH);
 
   const location = useLocation();
 
   const getString = (s: LanguageString, ...s2: string[]) => {
-    let str = l[s] as string || LANUGAGE_ENGLISH[s];
+    let str = language[s] as string || LANUGAGE_ENGLISH[s];
     if (!str) return "?";
     for (let i = 0; i < s2.length; i++) {
       str.replace("$" + i, s2[i]);
@@ -68,7 +66,7 @@ function App() {
 
 
   return (
-    <LanguageContext.Provider value={{ l: getString, setLanguage }}>
+    <LanguageContext.Provider value={{ l: getString, language, setLanguage }}>
       <div className="flexCol flex" style={{ overflowX: "hidden" }}>
         <AnimatePresence mode="wait" initial={false}>
           {React.cloneElement(element, { key: location.pathname })}
