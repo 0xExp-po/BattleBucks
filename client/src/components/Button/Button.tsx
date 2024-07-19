@@ -19,7 +19,9 @@ function Button(props: ButtonProps) {
   return (
     <button className={baseClass} style={props.style} onClick={props.onClick} disabled={props.disabled}>
       <div className="buttonInner">
-        <div>{props.children}</div> {/* The additional div is for padding */}
+        <div className="buttonInnerBgDarken"> {/* for darkening the background on active */}
+          <div>{props.children}</div> {/* The additional div is for padding */}
+        </div>
       </div>
     </button>
   );

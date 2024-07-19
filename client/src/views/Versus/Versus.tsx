@@ -18,12 +18,12 @@ function Versus() {
     <div className="flexCol flex" style={{ margin: "1em" }}>
       <div className="flexRow center" style={{ gap: "0.25em", marginBottom: "2em" }}>
         <div className="flex flexCol center">
-          <h3 style={{ color: "rgb(238, 188, 188)" }}>Player1</h3>
+          <h3 style={{ color: "rgb(229, 243, 255)" }}>Player1</h3>
           <Avatar size="3em" />
         </div>
         <div className="flex center">vs</div>
         <div className="flex flexCol center">
-          <h3 style={{ color: "rgb(238, 188, 188)" }}>Player2</h3>
+          <h3 style={{ color: "rgb(229, 243, 255)" }}>Player2</h3>
           <Avatar size="3em" />
         </div>
       </div>
