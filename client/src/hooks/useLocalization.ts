@@ -1,11 +1,13 @@
 import { createContext, useContext } from "react";
 import { Language, LanguageString } from "../utils/types";
 
-export const LANUGAGE_ENGLISH: Language = {
+export const LANGUAGE_ENGLISH: Language = {
+  NAME: "eng",
   welcomeBack: "Welcome back",
 };
 
-export const LANUGAGE_RUSSIAN: Language = {
+export const LANGUAGE_RUSSIAN: Language = {
+  NAME: "rus",
   welcomeBack: "Добро пожаловать",
 };
 
@@ -15,7 +17,7 @@ export const LanguageContext = createContext<{
   setLanguage: React.Dispatch<React.SetStateAction<Language>>
 }>({
   l: (s) => s,
-  language: LANUGAGE_ENGLISH,
+  language: LANGUAGE_ENGLISH,
   setLanguage: (l) => l,
 });
 

@@ -1,14 +1,14 @@
 import Eng from "../assets/eng.avif";
 import Rus from "../assets/rus.avif";
-import { LANUGAGE_ENGLISH, LANUGAGE_RUSSIAN, useLanguage } from "../hooks/useLocalization";
+import { LANGUAGE_ENGLISH, LANGUAGE_RUSSIAN, useLanguage } from "../hooks/useLocalization";
 import "./LanguageBubble.scss";
 
 function LanguageBubble() {
   const { language, setLanguage } = useLanguage();
 
   return (
-    <button className="languageBubble" onClick={() => setLanguage(language === LANUGAGE_ENGLISH ? LANUGAGE_RUSSIAN : LANUGAGE_ENGLISH)}>
-      <img src={language === LANUGAGE_ENGLISH ? Eng : Rus} alt="language bubble" />
+    <button className="languageBubble" onClick={() => setLanguage(language.NAME === LANGUAGE_ENGLISH.NAME ? LANGUAGE_RUSSIAN : LANGUAGE_ENGLISH)}>
+      <img src={language.NAME === LANGUAGE_ENGLISH.NAME ? Eng : Rus} alt="language bubble" />
     </button>
   );
 }
