@@ -1,15 +1,24 @@
 @import "../../index.scss";
 
+.items {
+  @extend .flex;
+  @extend .center;
+  @extend .absoluteCenter;
+  position: absolute;
+  overflow: hidden;
+}
+
 .item {
   @extend .flexCol;
   @extend .center;
+  position: absolute;
   width: 5em;
   height: 6em;
   background-color: white;
   border-radius: 10px;
   border: 5px solid grey;
-  will-change: filter;
-  transition: filter 300ms;
+  will-change: transform, filter;
+  transition: transform 300ms, filter 200ms;
   font-weight: bold;
   text-shadow: 0 0 5px black;
   cursor: pointer;
@@ -20,16 +29,28 @@
 }
 
 .rps:hover {
-  animation: shake 100ms linear infinite alternate;
+  animation: shake 300ms linear infinite;
 }
 
 @keyframes shake {
   from {
+    transform: translateX(0vw);
+  }
+
+  25% {
+    transform: translateX(3vw);
+  }
+
+  50% {
+    transform: translateX(0vw);
+  }
+
+  75% {
     transform: translateX(-3vw);
   }
 
   to {
-    transform: translateX(3vw);
+    transform: translateX(0vw);
   }
 }
 
