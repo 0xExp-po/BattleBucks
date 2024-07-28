@@ -1,11 +1,14 @@
 import LogoImage from "../../assets/logo.png";
+import Dots from "../../assets/dots.avif";
 import "./Logo.scss";
 
 function Logo() {
   return (
-    <div className="logo">
-      <img src={LogoImage} className="logoImg" alt="logo" />
-    </div>
+    <div className="logoOuter" style={{ backgroundImage: `url(${Dots})` }}>
+      <div className="logoInner">
+        <img className="logoImg" src={LogoImage} className="logoImg" alt="logo" />
+      </div>
+    </div >
   );
 }
 

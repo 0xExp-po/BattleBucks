@@ -7,5 +7,6 @@ export enum LanguageString {
 };
 
 export type Language = {
+  NAME: string;
   welcomeBack: string;
 };

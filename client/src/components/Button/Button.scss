@@ -1,10 +1,20 @@
 @import "../../index.scss";
 
+.comingSoonBanner {
+  @extend .absolute;
+  width: 2em;
+  height: 2em;
+  right: 0.2em;
+  top: 0.2em;
+  transform: rotate(10deg);
+}
+
 button:disabled:active {
   transform: initial;
 }
 
-.buttonInner, .buttonInnerBgDarken {
+.buttonInner,
+.buttonInnerBgDarken {
   @extend .flex;
   @extend .center;
   width: 100%;

@@ -10,7 +10,7 @@ import GameEnd from "./views/GameEnd";
 import ViewTransition from "./components/ViewTransition";
 import { useLocation, useRoutes } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
-import { LanguageContext, LANUGAGE_ENGLISH } from "./hooks/useLocalization";
+import { LanguageContext, LANGUAGE_ENGLISH } from "./hooks/useLocalization";
 import { LanguageString } from "./utils/types";
 
 function App() {
@@ -49,12 +49,12 @@ function App() {
     },
   ]);
 
-  const [language, setLanguage] = useState(LANUGAGE_ENGLISH);
+  const [language, setLanguage] = useState(LANGUAGE_ENGLISH);
 
   const location = useLocation();
 
   const getString = (s: LanguageString, ...s2: string[]) => {
-    let str = language[s] as string || LANUGAGE_ENGLISH[s];
+    let str = language[s] as string || LANGUAGE_ENGLISH[s];
     if (!str) return "?";
     for (let i = 0; i < s2.length; i++) {
       str.replace("$" + i, s2[i]);
@@ -63,7 +63,6 @@ function App() {
   }
 
   if (!element) return <div></div>;
-
 
   return (
     <LanguageContext.Provider value={{ l: getString, language, setLanguage }}>
