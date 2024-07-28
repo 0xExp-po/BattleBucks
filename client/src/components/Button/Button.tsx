@@ -1,5 +1,6 @@
 import { CSSProperties } from "react";
 import { Children } from "../../utils/types";
+import ComingSoon from "../../assets/coming_soon.png";
 import "./Button.scss";
 
 interface ButtonProps {
@@ -10,6 +11,7 @@ interface ButtonProps {
   className?: string;
   colorfulBorder?: boolean;
   disabled?: boolean;
+  comingSoonBanner?: boolean;
 }
 
 function Button(props: ButtonProps) {
@@ -20,6 +22,7 @@ function Button(props: ButtonProps) {
     <button className={baseClass} style={props.style} onClick={props.onClick} disabled={props.disabled}>
       <div className="buttonInner">
         <div className="buttonInnerBgDarken"> {/* for darkening the background on active */}
+          {props.comingSoonBanner && <img className="comingSoonBanner" src={ComingSoon} alt="coming soon banner" />}
           <div>{props.children}</div> {/* The additional div is for padding */}
         </div>
       </div>
