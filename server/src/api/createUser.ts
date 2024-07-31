@@ -3,52 +3,43 @@ import { z } from "zod";
 import { prisma } from "../app";
 import { commonResponse } from "../interfaces/MessageResponse";
 
-// Common Response Schema
+const userSchema = z.object({
+  name: z.string(),
+  username: z.string(),
+  phoneNo: z.string().nullable(),
+  profilePicture: z.string().nullable(),
+  bio: z.string().nullable(),
+});
 
+export const createUser = publicProcedure
+  .input(userSchema)
+  .output(commonResponse(userSchema.nullable()))
+  .mutation(async ({ input }): Promise<any> => {
+    const { username, ...userData } = input;
 
-export const createUser = publicProcedure.input(z.object({
-    name: z.string(),
-    username: z.string(),
-    phoneNo: z.string().nullable(),
-    profilePicture: z.string().nullable(),
-    bio: z.string().nullable(),
-})).output(commonResponse(z.object({
-    name: z.string(),
-    username: z.string(),
-    phoneNo: z.string().nullable(),
-    profilePicture: z.string().nullable(),
-    bio: z.string().nullable(),
-})).nullable()).mutation(async (req): Promise<any> => {
-    const { name, username, phoneNo, profilePicture, bio } = req.input;
     const isUserExist = await prisma.user.findUnique({ where: { username } });
 
     if (isUserExist) {
-        return {
-            status: 400,
-            error: "User already exist"
-        }
+      return {
+        status: 400,
+        error: "User already exists",
+      };
     }
+
     try {
+      const user = await prisma.user.create({
+        data: { username, ...userData },
+      });
 
-        const user = await prisma.user.create({
-            data: {
-                name,
-                username,
-                phoneNo,
-                profilePicture,
-                bio
-            }
-        });
-
-        return {
-            status: 200,
-            result: user
-        }
+      return {
+        status: 200,
+        result: user,
+      };
     } catch (error) {
-        return {
-            status: 400,
-            result: null,
-            error: "Something went wrong"
-        }
+      return {
+        status: 400,
+        result: null,
+        error: "Something went wrong",
+      };
     }
-})
+  });
