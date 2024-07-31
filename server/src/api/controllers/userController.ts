@@ -16,23 +16,55 @@ const ProfileInputSchema = z.object({
   userId: z.string(),
 });
 
+const SearchInputSchema = z.object({
+  search: z.string(),
+  limit: z.number().default(10),
+  offset: z.number().default(0),
+});
+
+const SearchOutputSchema = commonResponse(
+  z
+    .object({
+      players: z.array(
+        z.object({
+          name: z.string().optional(),
+          username: z.string().optional(),
+        })
+      ),
+      total: z.number(),
+    })
+    .nullable()
+);
+
 export const createUser = publicProcedure
   .input(UserInputSchema)
-  .output(commonResponse(z.object({ user: z.any() }).nullable()))
+  .output(commonResponse(UserInputSchema.nullable()))
   .mutation(async ({ input }): Promise<any> => {
+    const { username, ...userData } = input;
+
+    const isUserExist = await prisma.user.findUnique({ where: { username } });
+
+    if (isUserExist) {
+      return {
+        status: 400,
+        error: "User already exists",
+      };
+    }
+
     try {
       const user = await prisma.user.create({
-        data: input,
+        data: { username, ...userData },
       });
+
       return {
         status: 200,
-        result: { user },
+        result: user,
       };
     } catch (error) {
       return {
-        status: 500,
-        error:
-          error instanceof Error ? error.message : "An unknown error occurred",
+        status: 400,
+        result: null,
+        error: "Something went wrong",
       };
     }
   });
@@ -65,3 +97,31 @@ export const getProfile = publicProcedure
   });
 
 // Other user controller functions...
+
+export const searchPlayer = publicProcedure
+  .input(SearchInputSchema)
+  .output(SearchOutputSchema)
+  .query(async ({ input: { search, limit, offset } }): Promise<any> => {
+    const searchResult = await prisma.user.findMany({
+      select: {
+        name: true,
+        username: true,
+      },
+      where: {
+        OR: [
+          { name: { contains: search } },
+          { username: { contains: search } },
+        ],
+      },
+      take: limit,
+      skip: offset,
+    });
+
+    return {
+      status: 200,
+      result: {
+        players: searchResult,
+        total: searchResult.length,
+      },
+    };
+  });
