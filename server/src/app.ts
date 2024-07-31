@@ -1,78 +1,50 @@
-import express from 'express';
-import cors from 'cors';
-import { appRouter } from './api/router';
+import express from "express";
+import cors from "cors";
+import { appRouter } from "./api/router";
 import * as trpcExpress from "@trpc/server/adapters/express";
-import { inferAsyncReturnType, initTRPC } from '@trpc/server';
-import { createContext } from './context';
+import { inferAsyncReturnType, initTRPC } from "@trpc/server";
+import { createContext } from "./context";
 import { expressHandler } from "trpc-playground/handlers/express";
-import { PrismaClient, User } from '@prisma/client';
-const app = express();
+import { PrismaClient, User } from "@prisma/client";
 import { Server } from "socket.io";
-import { randomUUID } from 'crypto';
-import { userOffline, userOnline } from './socket/userEvents';
-import { acceptRequest, findMatch, gamePlay } from './socket/gameEvents';
+import { randomUUID } from "crypto";
+import { userOffline, userOnline } from "./socket/userEvents";
+import { acceptRequest, findMatch, gamePlay } from "./socket/gameEvents";
 
+const app = express();
+const TRPC_ENDPOINT = "/trpc";
+const TRPC_PLAYGROUND_ENDPOINT = "/trpc-playground";
 
-// ROUTES
+// Initialize Prisma client once
+export const prisma = new PrismaClient();
+
+// Initialize tRPC
+type Context = inferAsyncReturnType<typeof createContext>;
+export const t = initTRPC.context<Context>().create();
+
+// Configure Socket.IO
+export const io = new Server({
+  cors: {
+    origin:
+      process.env.NODE_ENV === "production" ? process.env.ALLOWED_ORIGINS : "*",
+  },
+});
+
+// Middleware
+app.use(
+  cors({
+    origin:
+      process.env.NODE_ENV === "production" ? process.env.ALLOWED_ORIGINS : "*",
+  })
+);
+app.use(express.json()); // Add JSON parsing middleware
+
+// Routes
 app.get("/", (req, res) => {
   res.send("hello, world!");
 });
 
-// initialize trpc on express server with playground
-const TRPC_ENDPOINT = "/trpc";
-const TRPC_PLAYGROUND_ENDPOINT = "/trpc-playground";
-type Context = inferAsyncReturnType<typeof createContext>;
-export const t = initTRPC.context<Context>().create()
-export const prisma = new PrismaClient()
-
-
-
-export const io = new Server({
-  cors: {
-    origin: "*" ||  ["http://localhost:5173"],
-  },
-});
-
-io.listen(5001);
-
-io.on("connection", async (socket) => {
-  console.log(`socket ${socket.id} connected`);
-
-  // whern user Join
-  userOnline(socket).then(currentUser => {
-    console.log(currentUser, "currentUser");
-    if (currentUser) {
-      findMatch(socket, currentUser).then(() => {
-        acceptRequest(socket, currentUser).then((gameInfo) => {
-          gamePlay(socket, gameInfo);
-        })
-      })
-    } else {
-      console.log("No current user set. Unable to find match.");
-    }
-  })
-
-
-  await userOffline(socket);
-
-
-
-  socket.on("disconnect", () => {
-    console.log(`socket ${socket.id} disconnected`);
-  });
-});
-
-// MIDDLEWARE
-io.use((socket, next) => {
-  let token = socket.handshake.query.key;
-  if (token === process.env.SOCKET_TOKEN) {
-    next();
-  }
-})
-
-
-
-app.use(cors({ origin: "*" }));
+// tRPC setup
 app.use(
   TRPC_ENDPOINT,
   trpcExpress.createExpressMiddleware({
@@ -81,6 +53,39 @@ app.use(
   })
 );
 
+// Socket.IO connection handling
+io.use((socket, next) => {
+  const token = socket.handshake.auth.token;
+  if (token === process.env.SOCKET_TOKEN) {
+    next();
+  } else {
+    next(new Error("Authentication error"));
+  }
+});
+
+io.on("connection", async (socket) => {
+  console.log(`Socket ${socket.id} connected`);
+
+  try {
+    const currentUser = await userOnline(socket);
+    if (currentUser) {
+      await findMatch(socket, currentUser);
+      const gameInfo = await acceptRequest(socket, currentUser);
+      await gamePlay(socket, gameInfo);
+    } else {
+      console.log("No current user set. Unable to find match.");
+    }
+  } catch (error) {
+    console.error("Error in connection handling:", error);
+  }
+
+  socket.on("disconnect", async () => {
+    console.log(`Socket ${socket.id} disconnected`);
+    await userOffline(socket);
+  });
+});
+
+// tRPC Playground setup
 expressHandler({
   trpcApiEndpoint: TRPC_ENDPOINT,
   playgroundEndpoint: TRPC_PLAYGROUND_ENDPOINT,
@@ -89,9 +94,8 @@ expressHandler({
   request: {
     // superjson: true,
   },
-}).then((handeler: any) => {
-  app.use(handeler);
+}).then((handler) => {
+  app.use(handler);
 });
-
 
 export default app;
