@@ -66,6 +66,7 @@ model Game {
   gameType       GameType       @default(v1v1)
   participants   GameParticipant[]
   gameHistory    GameLog[]
+  status         GameStatus     @default(OPEN)
 }
 
 model GameParticipant {
@@ -118,4 +119,10 @@ model Transaction {
 enum GameType {
   v1v1
   BattleRoyale
+}
+
+enum GameStatus {
+  OPEN
+  IN_PROGRESS
+  CLOSED
 }
