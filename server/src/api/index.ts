@@ -11,8 +11,10 @@ export const createContext = async ({
     res,
   };
 }; // context
+
 type Context = inferAsyncReturnType<typeof createContext>;
 const t = initTRPC.context<Context>().create(); // initialize trpc (must be done once)
+
 // Reusable middleware that checks if users are authenticated.
 const isAuthenticated = t.middleware(async ({ next, ctx }) => {
   const isLoggedIn = true;
@@ -29,6 +31,7 @@ const isAuthenticated = t.middleware(async ({ next, ctx }) => {
     throw new TRPCError({ code: "BAD_REQUEST", message: "Not authorized" });
   }
 });
+
 export const router = t.router;
 export const publicProcedure = t.procedure;
 export const privateProcedure = t.procedure.use(isAuthenticated);
