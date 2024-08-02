@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { privateProcedure, publicProcedure } from "../index";
+import { privateProcedure, publicProcedure } from "../middlewares";
 import { prisma } from "../../app";
 import { commonResponse } from "../../interfaces/MessageResponse";
 import { Game, GameParticipant, GameType } from "@prisma/client";

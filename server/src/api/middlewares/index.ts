@@ -1,10 +1,11 @@
 import { TRPCError } from "@trpc/server";
-import { t } from "../../app";
 import CryptoJS from "crypto-js";
-import { z } from "zod";
+import dotenv from "dotenv";
+import { t } from "../trpc";
+dotenv.config();
 
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-if (!TELEGRAM_BOT_TOKEN) {
+if (!process.env.TELEGRAM_BOT_TOKEN) {
   throw new Error("TELEGRAM_BOT_TOKEN environment variable is not set");
 }
 
@@ -48,3 +49,8 @@ export const loggerMiddleware = t.middleware(async ({ path, type, next }) => {
   console.log(`${new Date().toISOString()} - ${type} - ${path}`);
   return next();
 });
+
+export const publicProcedure = t.procedure.use(loggerMiddleware);
+export const privateProcedure = t.procedure
+  .use(loggerMiddleware)
+  .use(isAuthenticated);

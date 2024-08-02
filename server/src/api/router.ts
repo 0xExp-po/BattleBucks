@@ -1,4 +1,4 @@
-import { router } from "./index";
+import { router, t } from "./trpc";
 import gameRouter from "./routes/game";
 import userRouter from "./routes/user";
 
