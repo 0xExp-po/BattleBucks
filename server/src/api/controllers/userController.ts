@@ -48,7 +48,7 @@ const SearchOutputSchema = commonResponse(
     .nullable()
 );
 
-export const loginOrRegisterUser = privateProcedure
+export const createUser = privateProcedure
   .input(TelegramInputSchema)
   .output(
     commonResponse(
@@ -58,22 +58,14 @@ export const loginOrRegisterUser = privateProcedure
   .mutation(async ({ input, ctx }): Promise<any> => {
     const { id, first_name, last_name, username, photo_url } = input;
 
-    // Verify the authentication data
-    if (!ctx.user.isLoggedIn) {
-      throw new TRPCError({
-        code: "UNAUTHORIZED",
-        message: "User not authenticated",
-      });
-    }
-
     try {
-      let user = await prisma.user.findUnique({ where: { id: id.toString() } });
+      let user = await prisma.user.findUnique({ where: { telegramID: id.toString() } });
       let isNewUser = false;
 
       if (!user) {
         user = await prisma.user.create({
           data: {
-            id: id.toString(),
+            telegramID: id.toString(),
             name: `${first_name} ${last_name || ""}`.trim(),
             username: username || `user${id}`,
             profilePicture: photo_url,
