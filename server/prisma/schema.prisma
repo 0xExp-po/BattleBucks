@@ -3,12 +3,12 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id                   String         @id @default(uuid()) @db.Char(36)
+  id                   String         @id @default(uuid())
   name                 String         @db.VarChar(255)
   username             String         @unique
   phoneNo              String?        @unique
@@ -39,8 +39,8 @@ model Friend {
   friend User @relation("friendUsers", fields: [friendId], references: [id])
 
   @@unique([userId, friendId])
-  @@index([userId], map: "Friend_userId_fkey")
-  @@index([friendId], map: "Friend_friendId_fkey")
+  @@index([userId])
+  @@index([friendId])
 }
 
 model Notification {
@@ -54,7 +54,7 @@ model Notification {
 
   user User @relation(fields: [userId], references: [id])
 
-  @@index([userId], map: "Notification_userId_fkey")
+  @@index([userId])
 }
 
 model Game {
@@ -80,8 +80,8 @@ model GameParticipant {
   game      Game     @relation(fields: [gameId], references: [id])
   player    User     @relation(fields: [playerId], references: [id])
 
-  @@index([gameId], map: "GameParticipant_gameId_fkey")
-  @@index([playerId], map: "GameParticipant_playerId_fkey")
+  @@index([gameId])
+  @@index([playerId])
   @@unique([gameId, playerId])
 }
 
@@ -95,8 +95,8 @@ model GameLog {
   game      Game     @relation(fields: [gameId], references: [id])
   player    User     @relation(fields: [playerId], references: [id])
 
-  @@index([gameId], map: "GameLog_gameId_fkey")
-  @@index([playerId], map: "GameLog_playerId_fkey")
+  @@index([gameId])
+  @@index([playerId])
 }
 
 model Transaction {
@@ -111,9 +111,9 @@ model Transaction {
   sender     User     @relation("sender", fields: [senderId], references: [id])
   user       User     @relation("transactions", fields: [userId], references: [id])
 
-  @@index([receiverId], map: "Transaction_receiverId_fkey")
-  @@index([senderId], map: "Transaction_senderId_fkey")
-  @@index([userId], map: "Transaction_userId_fkey")
+  @@index([receiverId])
+  @@index([senderId])
+  @@index([userId])
 }
 
 enum GameType {
