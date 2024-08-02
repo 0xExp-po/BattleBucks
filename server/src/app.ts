@@ -6,6 +6,7 @@ import { inferAsyncReturnType, initTRPC } from "@trpc/server";
 import { createContext } from "./context";
 import { expressHandler } from "trpc-playground/handlers/express";
 import { PrismaClient } from "@prisma/client";
+import path from "path";
 
 const app = express();
 const TRPC_ENDPOINT = "/trpc";
@@ -27,9 +28,12 @@ app.use(
 );
 app.use(express.json()); // Add JSON parsing middleware
 
+// Serve static files from the 'public' directory
+app.use(express.static(path.join(__dirname, "../public")));
+
 // Routes
 app.get("/", (req, res) => {
-  res.send("hello, world!");
+  res.sendFile("index.html");
 });
 
 // tRPC setup
