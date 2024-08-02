@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { publicProcedure } from "../index";
+import { privateProcedure, publicProcedure } from "../index";
 import { prisma } from "../../app";
 import { commonResponse } from "../../interfaces/MessageResponse";
 import { Game, GameParticipant, GameType } from "@prisma/client";
@@ -15,7 +15,7 @@ const joinGameSchema = z.object({
   userId: z.string(),
 });
 
-export const createGame = publicProcedure
+export const createGame = privateProcedure
   .input(createGameSchema)
   .output(commonResponse(z.object({ game: z.any() }).nullable()))
   .mutation(async ({ input }): Promise<any> => {
@@ -36,7 +36,7 @@ export const createGame = publicProcedure
     }
   });
 
-export const joinGame = publicProcedure
+export const joinGame = privateProcedure
   .input(joinGameSchema)
   .output(commonResponse(z.object({ gameParticipant: z.any() }).nullable()))
   .mutation(async ({ input }): Promise<any> => {

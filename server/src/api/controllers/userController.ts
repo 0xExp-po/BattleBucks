@@ -1,10 +1,22 @@
 import { z } from "zod";
-import { publicProcedure } from "../index";
+import { privateProcedure, publicProcedure } from "../index";
 import { prisma } from "../../app";
 import { commonResponse } from "../../interfaces/MessageResponse";
-import { User } from "@prisma/client";
+import CryptoJS from "crypto-js";
+import { TRPCError } from "@trpc/server";
 
-const UserInputSchema = z.object({
+// Define schemas for input validation
+const TelegramInputSchema = z.object({
+  id: z.number(),
+  first_name: z.string(),
+  last_name: z.string().optional(),
+  username: z.string().optional(),
+  photo_url: z.string().optional(),
+  auth_date: z.number(),
+  hash: z.string(),
+});
+
+const UserSchema = z.object({
   name: z.string().max(255),
   username: z.string(),
   phoneNo: z.string().nullable().optional(),
@@ -36,29 +48,43 @@ const SearchOutputSchema = commonResponse(
     .nullable()
 );
 
-export const createUser = publicProcedure
-  .input(UserInputSchema)
-  .output(commonResponse(UserInputSchema.nullable()))
-  .mutation(async ({ input }): Promise<any> => {
-    const { username, ...userData } = input;
+export const loginOrRegisterUser = privateProcedure
+  .input(TelegramInputSchema)
+  .output(
+    commonResponse(
+      z.object({ user: UserSchema, isNewUser: z.boolean() }).nullable()
+    )
+  )
+  .mutation(async ({ input, ctx }): Promise<any> => {
+    const { id, first_name, last_name, username, photo_url } = input;
 
-    const isUserExist = await prisma.user.findUnique({ where: { username } });
-
-    if (isUserExist) {
-      return {
-        status: 400,
-        error: "User already exists",
-      };
+    // Verify the authentication data
+    if (!ctx.user.isLoggedIn) {
+      throw new TRPCError({
+        code: "UNAUTHORIZED",
+        message: "User not authenticated",
+      });
     }
 
     try {
-      const user = await prisma.user.create({
-        data: { username, ...userData },
-      });
+      let user = await prisma.user.findUnique({ where: { id: id.toString() } });
+      let isNewUser = false;
+
+      if (!user) {
+        user = await prisma.user.create({
+          data: {
+            id: id.toString(),
+            name: `${first_name} ${last_name || ""}`.trim(),
+            username: username || `user${id}`,
+            profilePicture: photo_url,
+          },
+        });
+        isNewUser = true;
+      }
 
       return {
         status: 200,
-        result: user,
+        result: { user, isNewUser },
       };
     } catch (error) {
       return {
@@ -69,9 +95,10 @@ export const createUser = publicProcedure
     }
   });
 
-export const getProfile = publicProcedure
+// Get user profile
+export const getProfile = privateProcedure
   .input(ProfileInputSchema)
-  .output(commonResponse(z.object({ user: z.any() }).nullable()))
+  .output(commonResponse(z.object({ user: UserSchema }).nullable()))
   .query(async ({ input }): Promise<any> => {
     try {
       const user = await prisma.user.findUnique({
@@ -96,8 +123,7 @@ export const getProfile = publicProcedure
     }
   });
 
-// Other user controller functions...
-
+// Search for players
 export const searchPlayer = publicProcedure
   .input(SearchInputSchema)
   .output(SearchOutputSchema)
