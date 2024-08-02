@@ -1,12 +1,7 @@
-import { router } from "../index";
-import {
-  createUser,
-  getProfile,
-  searchPlayer,
-} from "../controllers/userController";
+import { router } from "../trpc";
+import { getProfile, searchPlayer } from "../controllers/userController";
 
 export default router({
-  createUser,
   getProfile,
   searchPlayer,
 });
