@@ -24,10 +24,6 @@ const UserSchema = z.object({
   bio: z.string().nullable().optional(),
 });
 
-const ProfileInputSchema = z.object({
-  userId: z.string(),
-});
-
 const SearchInputSchema = z.object({
   search: z.string(),
   limit: z.number().default(10),
@@ -59,7 +55,9 @@ export const createUser = privateProcedure
     const { id, first_name, last_name, username, photo_url } = input;
 
     try {
-      let user = await prisma.user.findUnique({ where: { telegramID: id.toString() } });
+      let user = await prisma.user.findUnique({
+        where: { telegramID: id.toString() },
+      });
       let isNewUser = false;
 
       if (!user) {
@@ -89,12 +87,12 @@ export const createUser = privateProcedure
 
 // Get user profile
 export const getProfile = privateProcedure
-  .input(ProfileInputSchema)
+  .input(z.void())
   .output(commonResponse(z.object({ user: UserSchema }).nullable()))
-  .query(async ({ input }): Promise<any> => {
+  .query(async ({ ctx }): Promise<any> => {
     try {
       const user = await prisma.user.findUnique({
-        where: { id: input.userId },
+        where: { telegramID: ctx.user.telegramID },
       });
       if (!user) {
         return {

@@ -4,6 +4,8 @@ import dotenv from "dotenv";
 import { t } from "../trpc";
 import { prisma } from "../../app";
 
+dotenv.config()
+
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 if (!TELEGRAM_BOT_TOKEN) {
   throw new Error("TELEGRAM_BOT_TOKEN environment variable is not set");
