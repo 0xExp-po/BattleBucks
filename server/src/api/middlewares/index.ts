@@ -2,10 +2,12 @@ import { TRPCError } from "@trpc/server";
 import CryptoJS from "crypto-js";
 import dotenv from "dotenv";
 import { t } from "../trpc";
-dotenv.config();
+import { prisma } from "../../app";
+
+dotenv.config()
 
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-if (!process.env.TELEGRAM_BOT_TOKEN) {
+if (!TELEGRAM_BOT_TOKEN) {
   throw new Error("TELEGRAM_BOT_TOKEN environment variable is not set");
 }
 
@@ -32,12 +34,38 @@ export const isAuthenticated = t.middleware(async ({ next, ctx }) => {
 
   isAuth = _hash === hash;
   if (isAuth) {
+    const user = {
+      telegramID: initData.get("id"),
+      username: initData.get("username"),
+      firstName: initData.get("first_name"),
+      lastName: initData.get("last_name"),
+      bio: initData.get("bio"),
+      phoneNo: initData.get("phone_number"),
+      profilePicture: initData.get("photo_url"),
+    };
+    if (!user.telegramID) {
+      throw new TRPCError({ code: "BAD_REQUEST", message: "Not authorized" });
+    }
+    let dbUser;
+    dbUser = await prisma.user.findUnique({
+      where: { telegramID: user.telegramID },
+    });
+    if (!dbUser) {
+      dbUser = await prisma.user.create({
+        data: {
+          telegramID: user.telegramID,
+          name: `${user.firstName} ${user.lastName}`,
+          username: user.telegramID,
+          bio: user.bio,
+          phoneNo: user.phoneNo,
+          profilePicture: user.profilePicture,
+        },
+      });
+    }
     return next({
       ctx: {
         ...ctx,
-        user: {
-          isLoggedIn: isAuth,
-        },
+        user: dbUser,
       },
     });
   } else {
