@@ -4,16 +4,19 @@ import { prisma } from "../../app";
 import { commonResponse } from "../../interfaces/MessageResponse";
 import CryptoJS from "crypto-js";
 import { TRPCError } from "@trpc/server";
+import { verifyTelegramLogin } from "../../utils/auth";
 
 // Define schemas for input validation
-const TelegramInputSchema = z.object({
+export const TelegramUserSchema = z.object({
   id: z.number(),
   first_name: z.string(),
   last_name: z.string().optional(),
   username: z.string().optional(),
   photo_url: z.string().optional(),
-  auth_date: z.number(),
-  hash: z.string(),
+});
+
+export const TelegramInputSchema = z.object({
+  initData: z.string(),
 });
 
 const UserSchema = z.object({
@@ -44,7 +47,7 @@ const SearchOutputSchema = commonResponse(
     .nullable()
 );
 
-export const createUser = privateProcedure
+export const authenticateUser = publicProcedure
   .input(TelegramInputSchema)
   .output(
     commonResponse(
@@ -52,8 +55,20 @@ export const createUser = privateProcedure
     )
   )
   .mutation(async ({ input, ctx }): Promise<any> => {
-    const { id, first_name, last_name, username, photo_url } = input;
-
+    const { initData } = input;
+    const isValid = verifyTelegramLogin(
+      initData,
+      process.env.TELEGRAM_BOT_TOKEN || ""
+    );
+    if (!isValid) {
+      return {
+        status: 400,
+        result: null,
+        error: "Invalid Telegram data",
+      };
+    }
+    const parsedData = JSON.parse(Object.fromEntries(new URLSearchParams(initData)).user);
+    const {id, first_name, last_name, language_code, allows_write_to_pm} = parsedData
     try {
       let user = await prisma.user.findUnique({
         where: { telegramID: id.toString() },
@@ -65,8 +80,8 @@ export const createUser = privateProcedure
           data: {
             telegramID: id.toString(),
             name: `${first_name} ${last_name || ""}`.trim(),
-            username: username || `user${id}`,
-            profilePicture: photo_url,
+            username: `user${id}`,
+            profilePicture: "",
           },
         });
         isNewUser = true;
