@@ -9,6 +9,14 @@
   transform: rotate(10deg);
 }
 
+.comingSoonBanner2 {
+  @extend .absolute;
+  width: 3.5em;
+  height: 3.5em;
+  right: -0.1em;
+  top: -0.1em;
+}
+
 button:disabled:active {
   transform: initial;
 }
@@ -56,6 +64,7 @@ button:disabled:active {
   min-height: 4em;
   color: $colorFgDark;
   transition: 200ms;
+  font-style: bold;
 }
 
 .bigButton>.buttonInner {

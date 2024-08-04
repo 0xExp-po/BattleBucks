@@ -5,7 +5,7 @@ import Versus from "./views/Versus/Versus";
 import BattleRoyale from "./views/BattleRoyale";
 import MatchHistory from "./views/MatchHistory";
 import VersusLobby from "./views/VersusLobby";
-import VersusBuyin from "./views/VersusBuyin";
+import VersusBuyin from "./views/VersusBuyin/VersusBuyin";
 import GameEnd from "./views/GameEnd";
 import ViewTransition from "./components/ViewTransition";
 import { useLocation, useRoutes } from "react-router-dom";

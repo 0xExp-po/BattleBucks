@@ -3,11 +3,11 @@ import Paper from "../../assets/paper2.png";
 import Scissors from "../../assets/scissors2.png";
 import Button from "../../components/Button/Button";
 import Avatar from "../../components/Avatar";
-import { AnimationDefinition, motion, useAnimationControls } from "framer-motion";
-import { CSSProperties, useEffect, useState } from "react";
-import "./Versus.scss"
+import { AnimationControls, AnimationDefinition, motion, useAnimationControls } from "framer-motion";
+import { CSSProperties, useState } from "react";
 import { useNavigate } from "react-router";
 import { timeout } from "../../utils/timeout";
+import "./Versus.scss"
 
 type Item = "rock" | "paper" | "scissors";
 
@@ -88,7 +88,7 @@ function Versus() {
 
   const isChosen = state !== GameState.IDLE;
 
-  const controls: { [key: Item]: AnimationControls } = {
+  const controls: { [key: string]: AnimationControls } = {
     rock: controlsR,
     paper: controlsP,
     scissors: controlsS,
@@ -99,15 +99,16 @@ function Versus() {
       return;
     setState(GameState.CHOSEN);
     await timeout(2378);
-    console.log(state)
     commenceBattle();
   }
 
   function commenceBattle() {
     // if (!state == GameState.CHOSEN) return;
     //const index = Math.floor(Math.random() * 3);
+    if (!selectedItem) return;
+
     const index = 0;
-    const otherItem = ["rock", "paper", "scissors"][index];
+    const otherItem = ["rock", "paper", "scissors"][index] as Item;
 
     setOtherItem(otherItem);
     setState(GameState.BATTLE);
@@ -135,6 +136,8 @@ function Versus() {
 
   function reset() {
     if (state === GameState.IDLE) return;
+    if (!selectedItem) return;
+
     controls[selectedItem].stop();
     controls[selectedItem].start({ translateY: 0, translateX: 0, opacity: 1, scale: 1 });
     controlsOpponent.stop()
@@ -166,7 +169,7 @@ function Versus() {
         <Item controls={controlsR} transform={selectedItem === "rock" ? transforms[state] : transformIdleBase + " translateX(-110%)"} type="rock" onClick={() => !isChosen && setSelectedItem("rock")} />
         <Item controls={controlsP} transform={selectedItem === "paper" ? transforms[state] : transformIdleBase + " translateX(0%)"} type="paper" onClick={() => !isChosen && setSelectedItem("paper")} />
         <Item controls={controlsS} transform={selectedItem === "scissors" ? transforms[state] : transformIdleBase + " translateX(110%)"} type="scissors" onClick={() => !isChosen && setSelectedItem("scissors")} />
-        <Item controls={controlsOpponent} initialStyle={initialOpponentPosition} transform={transformSelectedRight} type={otherItem ?? "rock"} onClick={() => !isChosen && setSelectedItem("scissors")} />
+        <Item controls={controlsOpponent} initialStyle={initialOpponentPosition} transform={transformSelectedRight} type={otherItem ?? "rock"} />
       </div>
 
       <div className="flexRow flex center" style={{ justifyContent: "flex-end" }}>
@@ -181,16 +184,16 @@ function Versus() {
 
 interface ItemProps {
   type: Item;
-  onClick: React.MouseEventHandler<HTMLDivElement>;
+  onClick?: React.MouseEventHandler<HTMLDivElement>;
   transform: string;
   controls: AnimationControls;
-  initialStyle?: MotionStyle;
+  initialStyle?: CSSProperties | AnimationDefinition;
 }
 
 function Item(props: ItemProps) {
   return (
-    <motion.div animate={props.controls} style={props.initialStyle} className="flex center absolute">
-      <div onClick={props.onClick} className={"item " + props.type} style={{ transform: props.transform }}>
+    <motion.div animate={props.controls} style={props.initialStyle as CSSProperties} className="flex center absolute">
+      <div onClick={props.onClick} className={`${props.onClick ? "itemClickable" : ""} item ${props.type}`} style={{ transform: props.transform }}>
         <img src={images[props.type]} className="rps" alt={props.type} />
         <div style={{ textTransform: "uppercase" }}>{props.type}</div>
       </div>

@@ -1,5 +1,5 @@
 import React, { createContext, useEffect } from "react"
-import io from "socket.io-client";
+import io, { Socket } from "socket.io-client";
 
 const BaseUrl = "http://localhost:5001";
 
@@ -10,7 +10,7 @@ const socket = io(BaseUrl, {
   }
 });
 
-const SocketContext = createContext(null);
+const SocketContext = createContext<Socket>(socket);
 
 export default SocketContext;
 
