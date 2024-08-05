@@ -1,6 +1,7 @@
 $colorMain: #AB3130;
 $colorMain2: #FFD700;
 $colorMain3: #fff9cb;
+$colorFont: #FEE750;
 //$colorBigButton: $colorMain3;
 $colorBigButton: white;
 $colorBgLight: $colorMain;
@@ -107,12 +108,19 @@ button:focus-visible {
   right: 0;
   top: 0;
   bottom: 0;
-  margin-left: auto;
-  margin-right: auto;
+  margin: auto;
 }
 
 .standardBorderRadius {
   border-radius: 20px;
+}
+
+.outline {
+  text-shadow:
+    3px 3px 0 #000,
+    -3px 3px 0 #000,
+    -3px -3px 0 #000,
+    3px -3px 0 #000;
 }
 
 .pill {
@@ -150,4 +158,9 @@ button:focus-visible {
 
 .draw {
   background: radial-gradient(circle at left, rgba(143, 157, 17, 0.5) 0%, rgba(143, 157, 17, 0.5) 20%, rgba(74, 0, 255, 0) 100%);
+}
+
+@font-face {
+  font-family: "Bangers";
+  src: url("assets/Bangers-Regular.ttf") format("truetype");
 }
