@@ -207,3 +207,49 @@ export const updateProfile = privateProcedure
       };
     }
   });
+
+export const getUserFriends = privateProcedure
+  .output(commonResponse(z.object({ friends: z.array(UserSchema) }).nullable()))
+  .query(async ({ ctx }): Promise<any> => {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: ctx.user.id },
+        include: { friends: true },
+      });
+      if (!user) {
+        return {
+          status: 404,
+          error: "User not found",
+        };
+      }
+      return {
+        status: 200,
+        result: { friends: user.friends },
+      };
+    } catch (error) {
+      return {
+        status: 500,
+        error: error instanceof Error ? error.message : "An unknown error occurred",
+      };
+    }
+  });
+
+export const getUserGameHistory = privateProcedure
+  .output(commonResponse(z.object({ gameHistory: z.array(z.any()) }).nullable()))
+  .query(async ({ ctx }): Promise<any> => {
+    try {
+      const gameHistory = await prisma.gameParticipant.findMany({
+        where: { playerId: ctx.user.id },
+        include: { game: true },
+      });
+      return {
+        status: 200,
+        result: { gameHistory },
+      };
+    } catch (error) {
+      return {
+        status: 500,
+        error: error instanceof Error ? error.message : "An unknown error occurred",
+      };
+    }
+  });

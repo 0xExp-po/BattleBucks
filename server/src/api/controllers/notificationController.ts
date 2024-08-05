@@ -6,7 +6,7 @@ import { prisma } from "../../prisma";
 const sendNotificationSchema = z.object({
   recipientId: z.string(),
   message: z.string(),
-  type: z.enum(['GAME_INVITE', 'FRIEND_REQUEST', 'SYSTEM']),
+  type: z.enum(["GAME_INVITE", "FRIEND_REQUEST", "SYSTEM"]),
 });
 
 export const sendNotification = privateProcedure
@@ -28,18 +28,21 @@ export const sendNotification = privateProcedure
     } catch (error) {
       return {
         status: 500,
-        error: error instanceof Error ? error.message : "An unknown error occurred",
+        error:
+          error instanceof Error ? error.message : "An unknown error occurred",
       };
     }
   });
 
 export const getNotifications = privateProcedure
-  .output(commonResponse(z.object({ notifications: z.array(z.any()) }).nullable()))
+  .output(
+    commonResponse(z.object({ notifications: z.array(z.any()) }).nullable())
+  )
   .query(async ({ ctx }): Promise<any> => {
     try {
       const notifications = await prisma.notification.findMany({
         where: { userId: ctx.user.id },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
       });
       return {
         status: 200,
@@ -48,7 +51,100 @@ export const getNotifications = privateProcedure
     } catch (error) {
       return {
         status: 500,
-        error: error instanceof Error ? error.message : "An unknown error occurred",
+        error:
+          error instanceof Error ? error.message : "An unknown error occurred",
+      };
+    }
+  });
+
+export const getUnreadNotifications = privateProcedure
+  .output(
+    commonResponse(z.object({ notifications: z.array(z.any()) }).nullable())
+  )
+  .query(async ({ ctx }): Promise<any> => {
+    try {
+      const unreadNotifications = await prisma.notification.findMany({
+        where: { userId: ctx.user.id, isRead: false },
+        orderBy: { createdAt: "desc" },
+      });
+      return {
+        status: 200,
+        result: { notifications: unreadNotifications },
+      };
+    } catch (error) {
+      return {
+        status: 500,
+        error:
+          error instanceof Error ? error.message : "An unknown error occurred",
+      };
+    }
+  });
+
+export const getReadNotifications = privateProcedure
+  .output(
+    commonResponse(z.object({ notifications: z.array(z.any()) }).nullable())
+  )
+  .query(async ({ ctx }): Promise<any> => {
+    try {
+      const readNotifications = await prisma.notification.findMany({
+        where: { userId: ctx.user.id, isRead: true },
+        orderBy: { createdAt: "desc" },
+      });
+      return {
+        status: 200,
+        result: { notifications: readNotifications },
+      };
+    } catch (error) {
+      return {
+        status: 500,
+        error:
+          error instanceof Error ? error.message : "An unknown error occurred",
+      };
+    }
+  });
+
+export const getGameInvites = privateProcedure
+  .output(
+    commonResponse(z.object({ notifications: z.array(z.any()) }).nullable())
+  )
+  .query(async ({ ctx }): Promise<any> => {
+    try {
+      const gameInvites = await prisma.notification.findMany({
+        where: { userId: ctx.user.id, type: "GAME_INVITE" },
+        orderBy: { createdAt: "desc" },
+      });
+      return {
+        status: 200,
+        result: { notifications: gameInvites },
+      };
+    } catch (error) {
+      return {
+        status: 500,
+        error:
+          error instanceof Error ? error.message : " unknown error occurred",
+      };
+    }
+  });
+
+export const getFriendRequestNotifications = privateProcedure
+  .output(
+    commonResponse(z.object({ notifications: z.array(z.any()) }).nullable())
+  )
+  .query(async ({ ctx }): Promise<any> => {
+    try {
+      const friendRequestNotifications = await prisma.notification.findMany({
+        where: { userId: ctx.user.id, type: "FRIEND_REQUEST" },
+        orderBy: { createdAt: "desc" },
+      });
+      return {
+        status: 200,
+        result: { notifications: friendRequestNotifications },
+      };
+    } catch (error) {
+      return {
+        status: 500,
+        error:
+          error instanceof Error ? error.message : "An unknown error occurred",
       };
     }
   });
