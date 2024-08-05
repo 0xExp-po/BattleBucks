@@ -155,8 +155,8 @@ export const searchPlayer = publicProcedure
       },
       where: {
         OR: [
-          { name: { contains: search } },
-          { username: { contains: search } },
+          { name: { contains: search, mode: 'insensitive' } },
+          { username: { contains: search, mode: 'insensitive' } },
         ],
       },
       take: limit,
