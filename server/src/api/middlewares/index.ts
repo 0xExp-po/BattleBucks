@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { t } from "../trpc";
-import { prisma } from "../../app";
 import jwt from "jsonwebtoken";
+import { prisma } from "../../prisma";
 
 const JWT_SECRET = process.env.JWT_SECRET || "secret";
 

@@ -1,10 +1,10 @@
 import { z } from "zod";
 import { privateProcedure, publicProcedure } from "../middlewares";
-import { prisma } from "../../app";
 import { commonResponse } from "../../interfaces/MessageResponse";
 import CryptoJS from "crypto-js";
 import { TRPCError } from "@trpc/server";
-import { verifyTelegramLogin } from "../../utils/auth";
+import { generateToken, verifyTelegramLogin } from "../../utils/auth";
+import { prisma } from "../../prisma";
 
 // Define schemas for input validation
 export const TelegramUserSchema = z.object({
@@ -51,7 +51,9 @@ export const authenticateUser = publicProcedure
   .input(TelegramInputSchema)
   .output(
     commonResponse(
-      z.object({ user: UserSchema, isNewUser: z.boolean() }).nullable()
+      z
+        .object({ user: UserSchema, isNewUser: z.boolean(), token: z.string() })
+        .nullable()
     )
   )
   .mutation(async ({ input, ctx }): Promise<any> => {
@@ -67,8 +69,11 @@ export const authenticateUser = publicProcedure
         error: "Invalid Telegram data",
       };
     }
-    const parsedData = JSON.parse(Object.fromEntries(new URLSearchParams(initData)).user);
-    const {id, first_name, last_name, language_code, allows_write_to_pm} = parsedData
+    const parsedData = JSON.parse(
+      Object.fromEntries(new URLSearchParams(initData)).user
+    );
+    const { id, first_name, last_name, language_code, allows_write_to_pm } =
+      parsedData;
     try {
       let user = await prisma.user.findUnique({
         where: { telegramID: id.toString() },
@@ -87,9 +92,12 @@ export const authenticateUser = publicProcedure
         isNewUser = true;
       }
 
+      // Generate a token
+      const token = generateToken(user.id);
+
       return {
         status: 200,
-        result: { user, isNewUser },
+        result: { user, isNewUser, token },
       };
     } catch (error) {
       return {

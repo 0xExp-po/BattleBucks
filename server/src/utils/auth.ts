@@ -1,4 +1,5 @@
 import CryptoJS from "crypto-js";
+import jwt from "jsonwebtoken";
 
 export function verifyTelegramLogin(
   initData: string,
@@ -13,23 +14,47 @@ export function verifyTelegramLogin(
       return false;
     }
 
-    const authData = [...parsedData.entries()]
+    const dataCheckString = [...parsedData.entries()]
       .filter(([key]) => key !== "hash")
       .sort((a, b) => a[0].localeCompare(b[0]))
       .map((e) => `${e[0]}=${e[1]}`)
       .join("\n");
 
-    const secretKey = CryptoJS.SHA256(botToken);
-    const checkHash = CryptoJS.HmacSHA256(authData, secretKey).toString(
+    const secretKey = CryptoJS.HmacSHA256(botToken, "WebAppData");
+    const checkHash = CryptoJS.HmacSHA256(dataCheckString, secretKey).toString(
       CryptoJS.enc.Hex
     );
 
-    console.log("Auth data:", authData);
-    console.log("Check hash:", checkHash);
+    // Optionally, check the auth_date to prevent use of outdated data
+    const authDate = parsedData.get("auth_date");
+    if (authDate) {
+      const currentTime = Math.floor(Date.now() / 1000);
+      const authTime = parseInt(authDate, 10);
+      if (currentTime - authTime > 86400) { // 24 hours
+        console.error("Auth date is too old");
+        return false;
+      }
+    }
 
     return checkHash === hash;
   } catch (error) {
     console.error("Error verifying Telegram login:", error);
     return false;
   }
+}
+
+export function generateToken(userId: string): string {
+  const secretKey = process.env.SOCKET_TOKEN;
+
+  if (!secretKey) {
+    throw new Error("JWT_SECRET_KEY is not defined in environment variables");
+  }
+
+  const token = jwt.sign(
+    { userId },
+    secretKey,
+    { expiresIn: "7d" } // Token expires in 7 days
+  );
+
+  return token;
 }
