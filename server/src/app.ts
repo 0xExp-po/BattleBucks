@@ -12,12 +12,6 @@ const app = express();
 const TRPC_ENDPOINT = "/trpc";
 const TRPC_PLAYGROUND_ENDPOINT = "/trpc-playground";
 
-// Initialize tRPC
-type Context = inferAsyncReturnType<typeof createContext>;
-export const t = initTRPC.context<Context>().create();
-
-// Initialize Prisma client once
-export const prisma = new PrismaClient();
 
 // Middleware
 app.use(
