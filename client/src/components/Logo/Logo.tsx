@@ -6,7 +6,7 @@ function Logo() {
   return (
     <div className="logoOuter" style={{ backgroundImage: `url(${Dots})` }}>
       <div className="logoInner">
-        <img className="logoImg" src={LogoImage} className="logoImg" alt="logo" />
+        <img className="logoImg" src={LogoImage} alt="logo" />
       </div>
     </div >
   );

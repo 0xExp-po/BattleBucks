@@ -1,0 +1,7 @@
+@import "../../index.scss";
+
+.loaderImg {
+    width: 3em;
+    height: 3em;
+    background: radial-gradient(closest-side, rgba(255, 166, 0, 0.2), rgba(255, 255, 0, 0.2), transparent);
+}
