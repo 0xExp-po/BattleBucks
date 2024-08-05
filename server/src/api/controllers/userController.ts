@@ -47,6 +47,13 @@ const SearchOutputSchema = commonResponse(
     .nullable()
 );
 
+const UpdateProfileInputSchema = z.object({
+  name: z.string().max(255).optional(),
+  phoneNo: z.string().nullable().optional(),
+  profilePicture: z.string().nullable().optional(),
+  bio: z.string().nullable().optional(),
+});
+
 export const authenticateUser = publicProcedure
   .input(TelegramInputSchema)
   .output(
@@ -163,4 +170,40 @@ export const searchPlayer = publicProcedure
         total: searchResult.length,
       },
     };
+  });
+
+// Update user profile
+export const updateProfile = privateProcedure
+  .input(UpdateProfileInputSchema)
+  .output(commonResponse(z.object({ user: UserSchema }).nullable()))
+  .mutation(async ({ input, ctx }): Promise<any> => {
+    try {
+      const updatedUser = await prisma.user.update({
+        where: { telegramID: ctx.user.telegramID },
+        data: {
+          name: input.name,
+          phoneNo: input.phoneNo,
+          profilePicture: input.profilePicture,
+          bio: input.bio,
+        },
+      });
+
+      if (!updatedUser) {
+        return {
+          status: 404,
+          error: "User not found",
+        };
+      }
+
+      return {
+        status: 200,
+        result: { user: updatedUser },
+      };
+    } catch (error) {
+      return {
+        status: 500,
+        error:
+          error instanceof Error ? error.message : "An unknown error occurred",
+      };
+    }
   });
