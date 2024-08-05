@@ -16,9 +16,9 @@ export const isAuthenticated = t.middleware(async ({ next, ctx }) => {
   }
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as { id: string };
+    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
     const user = await prisma.user.findUnique({
-      where: { id: decoded.id },
+      where: { id: decoded.userId },
     });
 
     if (!user) {

@@ -229,13 +229,16 @@ export const getUserFriends = privateProcedure
     } catch (error) {
       return {
         status: 500,
-        error: error instanceof Error ? error.message : "An unknown error occurred",
+        error:
+          error instanceof Error ? error.message : "An unknown error occurred",
       };
     }
   });
 
 export const getUserGameHistory = privateProcedure
-  .output(commonResponse(z.object({ gameHistory: z.array(z.any()) }).nullable()))
+  .output(
+    commonResponse(z.object({ gameHistory: z.array(z.any()) }).nullable())
+  )
   .query(async ({ ctx }): Promise<any> => {
     try {
       const gameHistory = await prisma.gameParticipant.findMany({
@@ -249,7 +252,8 @@ export const getUserGameHistory = privateProcedure
     } catch (error) {
       return {
         status: 500,
-        error: error instanceof Error ? error.message : "An unknown error occurred",
+        error:
+          error instanceof Error ? error.message : "An unknown error occurred",
       };
     }
   });
