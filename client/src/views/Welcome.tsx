@@ -1,7 +1,7 @@
 import Button from "../components/Button/Button";
 import useTelegramUser from "../hooks/useTelegramUser";
 import Logo from "../components/Logo/Logo";
-import LanguageBubble from "../LanguageBubble/LanguageBubble";
+import LanguageBubble from "../components/LanguageBubble/LanguageBubble";
 import { useNavigate } from "react-router";
 import { useLanguage } from "../hooks/useLocalization";
 import { LanguageString } from "../utils/types";
