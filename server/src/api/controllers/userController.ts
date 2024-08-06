@@ -1,19 +1,30 @@
 import { z } from "zod";
-import { publicProcedure } from "../index";
-import { prisma } from "../../app";
+import { privateProcedure, publicProcedure } from "../middlewares";
 import { commonResponse } from "../../interfaces/MessageResponse";
-import { User } from "@prisma/client";
+import CryptoJS from "crypto-js";
+import { TRPCError } from "@trpc/server";
+import { generateToken, verifyTelegramLogin } from "../../utils/auth";
+import { prisma } from "../../prisma";
 
-const UserInputSchema = z.object({
+// Define schemas for input validation
+export const TelegramUserSchema = z.object({
+  id: z.number(),
+  first_name: z.string(),
+  last_name: z.string().optional(),
+  username: z.string().optional(),
+  photo_url: z.string().optional(),
+});
+
+export const TelegramInputSchema = z.object({
+  initData: z.string(),
+});
+
+const UserSchema = z.object({
   name: z.string().max(255),
   username: z.string(),
   phoneNo: z.string().nullable().optional(),
   profilePicture: z.string().nullable().optional(),
   bio: z.string().nullable().optional(),
-});
-
-const ProfileInputSchema = z.object({
-  userId: z.string(),
 });
 
 const SearchInputSchema = z.object({
@@ -36,29 +47,64 @@ const SearchOutputSchema = commonResponse(
     .nullable()
 );
 
-export const createUser = publicProcedure
-  .input(UserInputSchema)
-  .output(commonResponse(UserInputSchema.nullable()))
-  .mutation(async ({ input }): Promise<any> => {
-    const { username, ...userData } = input;
+const UpdateProfileInputSchema = z.object({
+  name: z.string().max(255).optional(),
+  phoneNo: z.string().nullable().optional(),
+  profilePicture: z.string().nullable().optional(),
+  bio: z.string().nullable().optional(),
+});
 
-    const isUserExist = await prisma.user.findUnique({ where: { username } });
-
-    if (isUserExist) {
+export const authenticateUser = publicProcedure
+  .input(TelegramInputSchema)
+  .output(
+    commonResponse(
+      z
+        .object({ user: UserSchema, isNewUser: z.boolean(), token: z.string() })
+        .nullable()
+    )
+  )
+  .mutation(async ({ input, ctx }): Promise<any> => {
+    const { initData } = input;
+    const isValid = verifyTelegramLogin(
+      initData,
+      process.env.TELEGRAM_BOT_TOKEN || ""
+    );
+    if (!isValid) {
       return {
         status: 400,
-        error: "User already exists",
+        result: null,
+        error: "Invalid Telegram data",
       };
     }
-
+    const parsedData = JSON.parse(
+      Object.fromEntries(new URLSearchParams(initData)).user
+    );
+    const { id, first_name, last_name, language_code, allows_write_to_pm } =
+      parsedData;
     try {
-      const user = await prisma.user.create({
-        data: { username, ...userData },
+      let user = await prisma.user.findUnique({
+        where: { telegramID: id.toString() },
       });
+      let isNewUser = false;
+
+      if (!user) {
+        user = await prisma.user.create({
+          data: {
+            telegramID: id.toString(),
+            name: `${first_name} ${last_name || ""}`.trim(),
+            username: `user${id}`,
+            profilePicture: "",
+          },
+        });
+        isNewUser = true;
+      }
+
+      // Generate a token
+      const token = generateToken(user.id);
 
       return {
         status: 200,
-        result: user,
+        result: { user, isNewUser, token },
       };
     } catch (error) {
       return {
@@ -69,13 +115,14 @@ export const createUser = publicProcedure
     }
   });
 
-export const getProfile = publicProcedure
-  .input(ProfileInputSchema)
-  .output(commonResponse(z.object({ user: z.any() }).nullable()))
-  .query(async ({ input }): Promise<any> => {
+// Get user profile
+export const getProfile = privateProcedure
+  .input(z.void())
+  .output(commonResponse(z.object({ user: UserSchema }).nullable()))
+  .query(async ({ ctx }): Promise<any> => {
     try {
       const user = await prisma.user.findUnique({
-        where: { id: input.userId },
+        where: { telegramID: ctx.user.telegramID },
       });
       if (!user) {
         return {
@@ -96,8 +143,7 @@ export const getProfile = publicProcedure
     }
   });
 
-// Other user controller functions...
-
+// Search for players
 export const searchPlayer = publicProcedure
   .input(SearchInputSchema)
   .output(SearchOutputSchema)
@@ -109,8 +155,8 @@ export const searchPlayer = publicProcedure
       },
       where: {
         OR: [
-          { name: { contains: search } },
-          { username: { contains: search } },
+          { name: { contains: search, mode: 'insensitive' } },
+          { username: { contains: search, mode: 'insensitive' } },
         ],
       },
       take: limit,
@@ -124,4 +170,90 @@ export const searchPlayer = publicProcedure
         total: searchResult.length,
       },
     };
+  });
+
+// Update user profile
+export const updateProfile = privateProcedure
+  .input(UpdateProfileInputSchema)
+  .output(commonResponse(z.object({ user: UserSchema }).nullable()))
+  .mutation(async ({ input, ctx }): Promise<any> => {
+    try {
+      const updatedUser = await prisma.user.update({
+        where: { telegramID: ctx.user.telegramID },
+        data: {
+          name: input.name,
+          phoneNo: input.phoneNo,
+          profilePicture: input.profilePicture,
+          bio: input.bio,
+        },
+      });
+
+      if (!updatedUser) {
+        return {
+          status: 404,
+          error: "User not found",
+        };
+      }
+
+      return {
+        status: 200,
+        result: { user: updatedUser },
+      };
+    } catch (error) {
+      return {
+        status: 500,
+        error:
+          error instanceof Error ? error.message : "An unknown error occurred",
+      };
+    }
+  });
+
+export const getUserFriends = privateProcedure
+  .output(commonResponse(z.object({ friends: z.array(UserSchema) }).nullable()))
+  .query(async ({ ctx }): Promise<any> => {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: ctx.user.id },
+        include: { friends: true },
+      });
+      if (!user) {
+        return {
+          status: 404,
+          error: "User not found",
+        };
+      }
+      return {
+        status: 200,
+        result: { friends: user.friends },
+      };
+    } catch (error) {
+      return {
+        status: 500,
+        error:
+          error instanceof Error ? error.message : "An unknown error occurred",
+      };
+    }
+  });
+
+export const getUserGameHistory = privateProcedure
+  .output(
+    commonResponse(z.object({ gameHistory: z.array(z.any()) }).nullable())
+  )
+  .query(async ({ ctx }): Promise<any> => {
+    try {
+      const gameHistory = await prisma.gameParticipant.findMany({
+        where: { playerId: ctx.user.id },
+        include: { game: true },
+      });
+      return {
+        status: 200,
+        result: { gameHistory },
+      };
+    } catch (error) {
+      return {
+        status: 500,
+        error:
+          error instanceof Error ? error.message : "An unknown error occurred",
+      };
+    }
   });

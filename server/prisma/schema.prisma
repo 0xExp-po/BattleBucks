@@ -3,26 +3,27 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id                   String         @id @default(uuid()) @db.Char(36)
-  name                 String         @db.VarChar(255)
-  username             String         @unique
-  phoneNo              String?        @unique
+  id                   String            @id @default(uuid())
+  telegramID           String            @unique @db.VarChar(255)
+  name                 String            @db.VarChar(255)
+  username             String            @unique
+  phoneNo              String?           @unique
   profilePicture       String?
   bio                  String?
-  createdAt            DateTime       @default(now())
-  updatedAt            DateTime       @updatedAt
-  isOnline             Boolean        @default(true)
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  isOnline             Boolean           @default(true)
   gameHistory          GameLog[]
-  receivedTransactions Transaction[]  @relation("receiver")
-  sentTransactions     Transaction[]  @relation("sender")
-  transactions         Transaction[]  @relation("transactions")
-  friends              Friend[]       @relation("userFriends")
-  friendOf             Friend[]       @relation("friendUsers")
+  receivedTransactions Transaction[]     @relation("receiver")
+  sentTransactions     Transaction[]     @relation("sender")
+  transactions         Transaction[]     @relation("transactions")
+  friends              Friend[]          @relation("userFriends")
+  friendOf             Friend[]          @relation("friendUsers")
   notifications        Notification[]
   gameParticipants     GameParticipant[]
 }
@@ -39,8 +40,8 @@ model Friend {
   friend User @relation("friendUsers", fields: [friendId], references: [id])
 
   @@unique([userId, friendId])
-  @@index([userId], map: "Friend_userId_fkey")
-  @@index([friendId], map: "Friend_friendId_fkey")
+  @@index([userId])
+  @@index([friendId])
 }
 
 model Notification {
@@ -54,49 +55,49 @@ model Notification {
 
   user User @relation(fields: [userId], references: [id])
 
-  @@index([userId], map: "Notification_userId_fkey")
+  @@index([userId])
 }
 
 model Game {
-  id             String         @id @default(uuid())
-  buyIn          Float?         @default(0)
-  maxPlayers     Int
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
-  gameType       GameType       @default(v1v1)
-  participants   GameParticipant[]
-  gameHistory    GameLog[]
-  status         GameStatus     @default(OPEN)
+  id           String            @id @default(uuid())
+  buyIn        Float?            @default(0)
+  maxPlayers   Int
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  gameType     GameType          @default(v1v1)
+  participants GameParticipant[]
+  gameHistory  GameLog[]
+  status       GameStatus        @default(OPEN)
 }
 
 model GameParticipant {
   id        Int      @id @default(autoincrement())
   gameId    String
   playerId  String
-  team      Int      // Use this to distinguish teams (e.g., 1 for Team 1, 2 for Team 2)
+  team      Int // Use this to distinguish teams (e.g., 1 for Team 1, 2 for Team 2)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  game      Game     @relation(fields: [gameId], references: [id])
-  player    User     @relation(fields: [playerId], references: [id])
+  game   Game @relation(fields: [gameId], references: [id])
+  player User @relation(fields: [playerId], references: [id])
 
-  @@index([gameId], map: "GameParticipant_gameId_fkey")
-  @@index([playerId], map: "GameParticipant_playerId_fkey")
   @@unique([gameId, playerId])
+  @@index([gameId])
+  @@index([playerId])
 }
 
 model GameLog {
   id        Int      @id @default(autoincrement())
   gameId    String
   playerId  String
-  move      String    // rock, paper, scissors
+  move      String // rock, paper, scissors
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   game      Game     @relation(fields: [gameId], references: [id])
   player    User     @relation(fields: [playerId], references: [id])
 
-  @@index([gameId], map: "GameLog_gameId_fkey")
-  @@index([playerId], map: "GameLog_playerId_fkey")
+  @@index([gameId])
+  @@index([playerId])
 }
 
 model Transaction {
@@ -111,9 +112,9 @@ model Transaction {
   sender     User     @relation("sender", fields: [senderId], references: [id])
   user       User     @relation("transactions", fields: [userId], references: [id])
 
-  @@index([receiverId], map: "Transaction_receiverId_fkey")
-  @@index([senderId], map: "Transaction_senderId_fkey")
-  @@index([userId], map: "Transaction_userId_fkey")
+  @@index([receiverId])
+  @@index([senderId])
+  @@index([userId])
 }
 
 enum GameType {

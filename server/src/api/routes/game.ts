@@ -1,10 +1,9 @@
-import { router } from "../index";
-import { createGame, joinGame } from "../controllers/gameController";
+import { router } from "../trpc";
+import { createGame, joinGame, getGameDetails, getUserGameHistory } from "../controllers/gameController";
 
 export default router({
   createGame,
   joinGame,
-  //   startGame,
-  //   submitMove,
-  //   closeGame,
+  getGameDetails,
+  getUserGameHistory,
 });

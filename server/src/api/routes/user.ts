@@ -1,12 +1,18 @@
-import { router } from "../index";
+import { router } from "../trpc";
 import {
-  createUser,
+  authenticateUser,
   getProfile,
   searchPlayer,
+  updateProfile,
+  getUserFriends,
+  getUserGameHistory,
 } from "../controllers/userController";
 
 export default router({
-  createUser,
+  authenticateUser,
   getProfile,
   searchPlayer,
+  updateProfile,
+  getUserFriends,
+  getUserGameHistory,
 });
