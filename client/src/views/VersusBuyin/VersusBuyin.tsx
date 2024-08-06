@@ -1,11 +1,11 @@
 import Logo from "../../components/Logo/Logo";
 import Button from "../../components/Button/Button";
-import SocketContext from "../../utils/socket";
 import Loader from "../../components/Loader/Loader";
-import { useContext, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router";
 import { motion } from "framer-motion";
 import { timeout } from "../../utils/timeout";
+import { trpc } from "../../trpc/trpc";
 import "./VersusBuyin.scss";
 
 enum State {
@@ -18,16 +18,31 @@ const matchFoundTextDuration = 2000;
 
 function VersusBuyin() {
   const navigate = useNavigate();
-  const socket = useContext(SocketContext);
   const [state, setState] = useState<State>(State.Idle);
 
+  const mutation = trpc.game.createGame.useMutation();
+
   // example implementation
-  const startNewGame = () => {
-    socket.emit("newGame", {
-      gameType: "BattleRoyale",
-      userName: "@VJBass",
-      matchType: "MatchMaking",
-    });
+  const startNewGame = async () => {
+    setState(State.Searching);
+    const response = await mutation.mutateAsync({ gameType: "v1v1", buyIn: 1, maxPlayers: 2 })
+    if (!response.result || response.status != 200) {
+      console.error("Error while starting new game: ", response.error);
+      return;
+    }
+    const g = response.result.game;
+
+    const game = {
+      id: g.id,
+      gameType: g.gameType,
+      maxPlayers: g.maxPlayers,
+      buyIn: g.buyIn,
+      status: g.status,
+      createdAt: new Date(g.createdAt),
+      updatedAt: new Date(g.updatedAt),
+    };
+
+    console.log(game);
   }
 
   const startNewFakeGame = async () => {
