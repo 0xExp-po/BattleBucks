@@ -10,7 +10,8 @@
     "start:dist": "node dist/src/index.js",
     "lint": "eslint --fix src test",
     "test": "jest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "socketdoc": "asyncapi generate fromTemplate asyncapi.yaml @asyncapi/html-template -o docs --force-write"
   },
   "keywords": [],
   "author": "CJ R. <cj@null.computer> (https://w3cj.now.sh)",

@@ -1,0 +1,232 @@
+asyncapi: '2.2.0'
+info:
+  title: BattleBuck Socket API Documentation
+  version: '1.0.0'
+  description: |
+    This is BattleBuck Socket API documentation.
+
+servers:
+  socket.io:
+    url: 'https://localhost:5000'
+    protocol: wss
+    description: Development server
+
+channels:
+  /:
+    description: Default namespace
+    subscribe:
+      summary: User connects to the default namespace
+      operationId: userConnect
+    publish:
+      summary: Server emits events to connected clients
+      operationId: serverEmit
+      message:
+        oneOf:
+          - $ref: '#/components/messages/GameCreated'
+          - $ref: '#/components/messages/PlayerJoined'
+          - $ref: '#/components/messages/GameStarted'
+          - $ref: '#/components/messages/MoveSubmitted'
+          - $ref: '#/components/messages/GameEnded'
+          - $ref: '#/components/messages/GameStateUpdated'
+          - $ref: '#/components/messages/Error'
+
+
+  /C2S_CREATE_GAME:
+    publish:
+      summary: Create a new game
+      operationId: createGame
+      message:
+        $ref: '#/components/messages/CreateGame'
+
+  /C2S_JOIN_GAME:
+    publish:
+      summary: Join a specific game
+      operationId: joinGame
+      message:
+        $ref: '#/components/messages/JoinGame'
+
+  /C2S_START_GAME:
+    publish:
+      summary: Start a game
+      operationId: startGame
+      message:
+        $ref: '#/components/messages/StartGame'
+
+  /C2S_SUBMIT_MOVE:
+    publish:
+      summary: Submit a move in a game
+      operationId: submitMove
+      message:
+        $ref: '#/components/messages/MoveSubmitted'
+
+  /C2S_END_GAME:
+    publish:
+      summary: End a game
+      operationId: endGame
+      message:
+        $ref: '#/components/messages/EndGame'
+
+  /C2S_UPDATE_GAME_STATE:
+    publish:
+      summary: Update game state
+      operationId: updateGameState
+      message:
+        $ref: '#/components/messages/UpdateGameState'
+
+  /C2S_LEAVE_GAME:
+    publish:
+      summary: User leaves a game
+      operationId: leaveGame
+      message:
+        $ref: '#/components/messages/LeaveGame'
+
+
+  /S2C_GAME_CREATED:
+    subscribe:
+      summary: Notify that a game has been created
+      operationId: gameCreated
+      message:
+        $ref: '#/components/messages/GameCreated'
+
+  /S2C_PLAYER_JOINED:
+    subscribe:
+      summary: Notify that a player has joined the game
+      operationId: playerJoined
+      message:
+        $ref: '#/components/messages/PlayerJoined'
+
+  /S2C_GAME_STARTED:
+    subscribe:
+      summary: Notify that a game has started
+      operationId: gameStarted
+      message:
+        $ref: '#/components/messages/GameStarted'
+
+  /S2C_MOVE_SUBMITTED:
+    subscribe:
+      summary: Notify that a move has been submitted
+      operationId: moveSubmitted
+      message:
+        $ref: '#/components/messages/MoveSubmitted'
+
+  /S2C_GAME_ENDED:
+    subscribe:
+      summary: Notify that a game has ended
+      operationId: gameEnded
+      message:
+        $ref: '#/components/messages/GameEnded'
+
+  /S2C_GAME_STATE_UPDATED:
+    subscribe:
+      summary: Notify that the game state has been updated
+      operationId: gameStateUpdated
+      message:
+        $ref: '#/components/messages/GameStateUpdated'
+
+  /S2C_ERROR:
+    subscribe:
+      summary: Notify of an error
+      operationId: error
+      message:
+        $ref: '#/components/messages/Error'
+
+components:
+  messages:
+    CreateGame:
+      payload:
+        type: object
+        properties:
+          gameId:
+            type: string
+    JoinGame:
+      payload:
+        type: object
+        properties:
+          gameId:
+            type: string
+          playerId:
+            type: string
+    StartGame:
+      payload:
+        type: object
+        properties:
+          gameId:
+            type: string
+    SubmitMove:
+      payload:
+        type: object
+        properties:
+          gameId:
+            type: string
+          playerId:
+            type: string
+          move:
+            type: string
+    EndGame:
+      payload:
+        type: object
+        properties:
+          gameId:
+            type: string
+          winnerId:
+            type: string
+    UpdateGameState:
+      payload:
+        type: object
+        properties:
+          gameId:
+            type: string
+          state:
+            type: object
+    LeaveGame:
+      payload:
+        type: object
+        properties:
+          userId:
+            type: string
+    GameCreated:
+      payload:
+        type: object
+        properties:
+          gameId:
+            type: string
+    PlayerJoined:
+      payload:
+        type: object
+        properties:
+          playerId:
+            type: string
+    GameStarted:
+      payload:
+        type: object
+        properties:
+          gameId:
+            type: string
+    MoveSubmitted:
+      payload:
+        type: object
+        properties:
+          playerId:
+            type: string
+          move:
+            type: string
+    GameEnded:
+      payload:
+        type: object
+        properties:
+          winnerId:
+            type: string
+    GameStateUpdated:
+      payload:
+        type: object
+        properties:
+          gameId:
+            type: string
+          state:
+            type: object
+    Error:
+      payload:
+        type: object
+        properties:
+          message:
+            type: string
