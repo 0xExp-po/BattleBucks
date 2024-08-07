@@ -1,6 +1,7 @@
 import { Server } from "socket.io";
 import { gameEvents } from "./events/gameEvents";
 import { userEvents } from "./events/userEvents";
+import { friendEvents } from "./events/friendEvents";
 
 const setupSocket = (io: Server) => {
   // io.use((socket, next) => {
@@ -18,6 +19,7 @@ const setupSocket = (io: Server) => {
     // Initialize event handlers
     gameEvents(socket, io);
     userEvents(socket, io);
+    friendEvents(socket, io);
 
     socket.on("disconnect", () => {
       console.log("User disconnected");
