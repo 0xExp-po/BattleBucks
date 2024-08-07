@@ -1,8 +1,8 @@
 import Logo from "../../components/Logo/Logo";
 import Button from "../../components/Button/Button";
 import Loader from "../../components/Loader/Loader";
-import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router";
 import { motion } from "framer-motion";
 import { timeout } from "../../utils/timeout";
 import { trpc } from "../../trpc/trpc";
@@ -18,9 +18,18 @@ const matchFoundTextDuration = 2000;
 
 function VersusBuyin() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [state, setState] = useState<State>(State.Idle);
 
   const mutation = trpc.game.createGame.useMutation();
+
+  useEffect(() => {
+    location.state?.matchMethod === undefined && navigate("/");
+  }, []);
+
+  if (location.state?.matchMethod == undefined) {
+    return <div></div>;
+  }
 
   // example implementation
   const startNewGame = async () => {

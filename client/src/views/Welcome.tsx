@@ -1,5 +1,5 @@
 import Button from "../components/Button/Button";
-import useTelegramUser from "../hooks/useTelegramUser";
+import useTelegramData from "../hooks/useTelegramData";
 import Logo from "../components/Logo/Logo";
 import LanguageBubble from "../components/LanguageBubble/LanguageBubble";
 import { useNavigate } from "react-router";
@@ -10,7 +10,7 @@ import { LanguageString } from "../utils/types";
 function Welcome() {
   const navigate = useNavigate();
 
-  const user = useTelegramUser();
+  const { initDataUnsafe } = useTelegramData();
 
   const { l } = useLanguage();
 
@@ -29,7 +29,7 @@ function Welcome() {
         </div>
         <Logo />
       </div>
-      <h4>{l(LanguageString.welcomeBack)}, <b style={{ color: "rgb(229, 243, 255)" }}>{user?.first_name ?? "Player"}</b>!</h4>
+      <h4>{l(LanguageString.welcomeBack)}, <b style={{ color: "rgb(229, 243, 255)" }}>{initDataUnsafe.user?.first_name ?? "Player"}</b>!</h4>
       <div className="flexCol" style={{ margin: "2em 0", gap: "1em" }}>
         <Button type="big" colorfulBorder onClick={() => navigate("/vs/lobby")}>1v1</Button>
         <Button type="big" comingSoonBanner>Battle Royale</Button>
