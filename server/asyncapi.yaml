@@ -80,6 +80,33 @@ channels:
       message:
         $ref: '#/components/messages/LeaveGame'
 
+  /C2S_FRIEND_REQUEST_SENT:
+    publish:
+      summary: Send a friend request
+      operationId: sendFriendRequest
+      message:
+        $ref: '#/components/messages/FriendRequestSent'
+
+  /S2C_FRIEND_REQUEST_RECEIVED:
+    subscribe:
+      summary: Notify that a friend request has been received
+      operationId: friendRequestReceived
+      message:
+        $ref: '#/components/messages/FriendRequestReceived'
+
+  /C2S_FRIEND_REQUEST_ACCEPTED:
+    publish:
+      summary: Accept a friend request
+      operationId: acceptFriendRequest
+      message:
+        $ref: '#/components/messages/FriendRequestAccepted'
+
+  /S2C_FRIEND_REQUEST_ACCEPTED:
+    subscribe:
+      summary: Notify that a friend request has been accepted
+      operationId: friendRequestAcceptedNotification
+      message:
+        $ref: '#/components/messages/FriendRequestAcceptedNotification'
 
   /S2C_GAME_CREATED:
     subscribe:
@@ -229,4 +256,37 @@ components:
         type: object
         properties:
           message:
+            type: string
+    FriendRequestSent:
+      payload:
+        type: object
+        properties:
+          senderId:
+            type: string
+          receiverId:
+            type: string
+
+    FriendRequestReceived:
+      payload:
+        type: object
+        properties:
+          senderId:
+            type: string
+
+    FriendRequestAccepted:
+      payload:
+        type: object
+        properties:
+          requestId:
+            type: number
+          accepterId:
+            type: string
+          requesterId:
+            type: string
+
+    FriendRequestAcceptedNotification:
+      payload:
+        type: object
+        properties:
+          friendId:
             type: string
