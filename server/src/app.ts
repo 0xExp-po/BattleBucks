@@ -7,6 +7,7 @@ import { createContext } from "./context";
 import { expressHandler } from "trpc-playground/handlers/express";
 import { PrismaClient } from "@prisma/client";
 import path from "path";
+import { renderTrpcPanel } from "trpc-panel";
 
 const app = express();
 const TRPC_ENDPOINT = "/trpc";
@@ -28,6 +29,12 @@ app.use(express.static(path.join(__dirname, "../public")));
 // Routes
 app.get("/", (req, res) => {
   res.sendFile("index.html");
+});
+
+app.use("/panel", (_, res) => {
+  return res.send(
+    renderTrpcPanel(appRouter, { url: `https://localhost:${process.env.PORT}${TRPC_ENDPOINT}` })
+  );
 });
 
 // tRPC setup

@@ -2,6 +2,12 @@ import { Server, Socket } from "socket.io";
 import { userStatus } from "../userStatus";
 
 export const gameEvents = (socket: Socket, io: Server) => {
+  // Notify game created
+  socket.on('createGame', (gameId: string) => {
+    console.log(`Game ${gameId} created`);
+    io.emit('gameCreated', { gameId });
+  });
+
   // Handle player joining a game room
   socket.on("joinGame", (data: { gameId: string; playerId: string }) => {
     console.log(`Player ${data.playerId} joined game ${data.gameId}`);
@@ -46,6 +52,15 @@ export const gameEvents = (socket: Socket, io: Server) => {
 
     io.to(data.gameId).emit("gameEnded", {
       winnerId: data.winnerId,
+    });
+  });
+
+  // Update game state
+  socket.on('updateGameState', (data: { gameId: string; state: any }) => {
+    console.log(`Updating game state for ${data.gameId}`);
+    io.to(data.gameId).emit('gameStateUpdated', {
+      gameId: data.gameId,
+      state: data.state,
     });
   });
 };

@@ -47,6 +47,13 @@ const SearchOutputSchema = commonResponse(
     .nullable()
 );
 
+const UpdateProfileInputSchema = z.object({
+  name: z.string().max(255).optional(),
+  phoneNo: z.string().nullable().optional(),
+  profilePicture: z.string().nullable().optional(),
+  bio: z.string().nullable().optional(),
+});
+
 export const authenticateUser = publicProcedure
   .input(TelegramInputSchema)
   .output(
@@ -148,8 +155,8 @@ export const searchPlayer = publicProcedure
       },
       where: {
         OR: [
-          { name: { contains: search } },
-          { username: { contains: search } },
+          { name: { contains: search, mode: 'insensitive' } },
+          { username: { contains: search, mode: 'insensitive' } },
         ],
       },
       take: limit,
@@ -163,4 +170,90 @@ export const searchPlayer = publicProcedure
         total: searchResult.length,
       },
     };
+  });
+
+// Update user profile
+export const updateProfile = privateProcedure
+  .input(UpdateProfileInputSchema)
+  .output(commonResponse(z.object({ user: UserSchema }).nullable()))
+  .mutation(async ({ input, ctx }): Promise<any> => {
+    try {
+      const updatedUser = await prisma.user.update({
+        where: { telegramID: ctx.user.telegramID },
+        data: {
+          name: input.name,
+          phoneNo: input.phoneNo,
+          profilePicture: input.profilePicture,
+          bio: input.bio,
+        },
+      });
+
+      if (!updatedUser) {
+        return {
+          status: 404,
+          error: "User not found",
+        };
+      }
+
+      return {
+        status: 200,
+        result: { user: updatedUser },
+      };
+    } catch (error) {
+      return {
+        status: 500,
+        error:
+          error instanceof Error ? error.message : "An unknown error occurred",
+      };
+    }
+  });
+
+export const getUserFriends = privateProcedure
+  .output(commonResponse(z.object({ friends: z.array(UserSchema) }).nullable()))
+  .query(async ({ ctx }): Promise<any> => {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: ctx.user.id },
+        include: { friends: true },
+      });
+      if (!user) {
+        return {
+          status: 404,
+          error: "User not found",
+        };
+      }
+      return {
+        status: 200,
+        result: { friends: user.friends },
+      };
+    } catch (error) {
+      return {
+        status: 500,
+        error:
+          error instanceof Error ? error.message : "An unknown error occurred",
+      };
+    }
+  });
+
+export const getUserGameHistory = privateProcedure
+  .output(
+    commonResponse(z.object({ gameHistory: z.array(z.any()) }).nullable())
+  )
+  .query(async ({ ctx }): Promise<any> => {
+    try {
+      const gameHistory = await prisma.gameParticipant.findMany({
+        where: { playerId: ctx.user.id },
+        include: { game: true },
+      });
+      return {
+        status: 200,
+        result: { gameHistory },
+      };
+    } catch (error) {
+      return {
+        status: 500,
+        error:
+          error instanceof Error ? error.message : "An unknown error occurred",
+      };
+    }
   });
