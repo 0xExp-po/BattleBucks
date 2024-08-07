@@ -30,7 +30,6 @@ channels:
           - $ref: '#/components/messages/GameStateUpdated'
           - $ref: '#/components/messages/Error'
 
-
   /C2S_CREATE_GAME:
     publish:
       summary: Create a new game
@@ -165,128 +164,153 @@ components:
         properties:
           gameId:
             type: string
+            description: Unique identifier for the game
     JoinGame:
       payload:
         type: object
         properties:
           gameId:
             type: string
+            description: Unique identifier for the game
           playerId:
             type: string
+            description: Unique identifier for the player
     StartGame:
       payload:
         type: object
         properties:
           gameId:
             type: string
+            description: Unique identifier for the game
     SubmitMove:
       payload:
         type: object
         properties:
           gameId:
             type: string
+            description: Unique identifier for the game
           playerId:
             type: string
+            description: Unique identifier for the player
           move:
             type: string
+            description: The move made by the player
     EndGame:
       payload:
         type: object
         properties:
           gameId:
             type: string
+            description: Unique identifier for the game
           winnerId:
             type: string
+            description: Unique identifier for the winner
     UpdateGameState:
       payload:
         type: object
         properties:
           gameId:
             type: string
+            description: Unique identifier for the game
           state:
             type: object
+            description: The current state of the game
     LeaveGame:
       payload:
         type: object
         properties:
           userId:
             type: string
+            description: Unique identifier for the user
     GameCreated:
       payload:
         type: object
         properties:
           gameId:
             type: string
+            description: Unique identifier for the game
     PlayerJoined:
       payload:
         type: object
         properties:
           playerId:
             type: string
+            description: Unique identifier for the player
     GameStarted:
       payload:
         type: object
         properties:
           gameId:
             type: string
+            description: Unique identifier for the game
     MoveSubmitted:
       payload:
         type: object
         properties:
           playerId:
             type: string
+            description: Unique identifier for the player
           move:
             type: string
+            description: The move made by the player
     GameEnded:
       payload:
         type: object
         properties:
           winnerId:
             type: string
+            description: Unique identifier for the winner
     GameStateUpdated:
       payload:
         type: object
         properties:
           gameId:
             type: string
+            description: Unique identifier for the game
           state:
             type: object
+            description: The current state of the game
     Error:
       payload:
         type: object
         properties:
           message:
             type: string
+            description: Error message
     FriendRequestSent:
       payload:
         type: object
         properties:
           senderId:
             type: string
+            description: Unique identifier for the sender
           receiverId:
             type: string
-
+            description: Unique identifier for the receiver
     FriendRequestReceived:
       payload:
         type: object
         properties:
           senderId:
             type: string
-
+            description: Unique identifier for the sender
     FriendRequestAccepted:
       payload:
         type: object
         properties:
           requestId:
             type: number
+            description: Unique identifier for the friend request
           accepterId:
             type: string
+            description: Unique identifier for the accepter
           requesterId:
             type: string
-
+            description: Unique identifier for the requester
     FriendRequestAcceptedNotification:
       payload:
         type: object
         properties:
           friendId:
             type: string
+            description: Unique identifier for the friend
