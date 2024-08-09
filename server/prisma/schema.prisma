@@ -68,6 +68,7 @@ model Game {
   participants GameParticipant[]
   gameHistory  GameLog[]
   status       GameStatus        @default(OPEN)
+  winner       String?
 }
 
 model GameParticipant {

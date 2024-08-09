@@ -19,14 +19,14 @@ export const userEvents = (socket: Socket, io: Server) => {
   });
 
   // Handle user joining a game (set status to GAMING)
-  socket.on('joinGame', (data: { userId: string; gameId: string }) => {
+  socket.on('C2S_JOIN_GAME', (data: { userId: string; gameId: string }) => {
     console.log(`User ${data.userId} joined game ${data.gameId}`);
     userStatus[data.userId] = { status: 'GAMING', gameId: data.gameId };
     socket.join(data.gameId);
   });
 
   // Handle user leaving a game (set status back to ONLINE)
-  socket.on('leaveGame', (data: { userId: string }) => {
+  socket.on('C2S_LEAVE_GAME', (data: { userId: string }) => {
     console.log(`User ${data.userId} left the game`);
     userStatus[data.userId] = { status: 'ONLINE' };
   });
