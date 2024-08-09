@@ -84,16 +84,78 @@ export const gameEvents = (socket: Socket, io: Server) => {
   // Handle move submission in a game
   socket.on(
     "C2S_SUBMIT_MOVE",
-    (data: { gameId: string; playerId: string; move: string }) => {
+    async (data: { gameId: string; playerId: string; move: string }) => {
       console.log(
         `Player ${data.playerId} submitted move in game ${data.gameId}`
       );
-      io.to(data.gameId).emit("S2C_MOVE_SUBMITTED", {
-        playerId: data.playerId,
-        move: data.move,
-      });
+      try {
+        // Log the move in the database
+        await prisma.gameLog.create({
+          data: {
+            gameId: data.gameId,
+            playerId: data.playerId,
+            move: data.move,
+          },
+        });
+
+        // Check if all players have submitted their moves
+        const game = await prisma.game.findUnique({
+          where: { id: data.gameId },
+          include: { participants: true },
+        });
+
+        if (game && game.participants.length === game.maxPlayers) {
+          // All players have submitted their moves, determine the winner
+          const gameLogs = await prisma.gameLog.findMany({
+            where: { gameId: data.gameId },
+          });
+
+          const winner = determineWinner(gameLogs);
+
+          // Update the game with the winner
+          await prisma.game.update({
+            where: { id: data.gameId },
+            data: { winner: winner?.playerId || null },
+          });
+
+          io.to(data.gameId).emit("S2C_MOVE_SUBMITTED", {
+            playerId: data.playerId,
+            move: data.move,
+            winner: winner?.playerId || null,
+          });
+        } else {
+          io.to(data.gameId).emit("S2C_MOVE_SUBMITTED", {
+            playerId: data.playerId,
+            move: data.move,
+            winner: null,
+          });
+        }
+      } catch (error) {
+        console.error(`Failed to submit move:`, error);
+        socket.emit("S2C_ERROR", {
+          message: "Failed to submit the move. Please try again.",
+        });
+      }
     }
   );
+
+  function determineWinner(gameLogs: any[]): { playerId: string } | null {
+    // Implement rock-paper-scissors logic here
+    if (gameLogs.length !== 2) return null;
+
+    const [player1, player2] = gameLogs;
+    if (player1.move === player2.move) return null; // It's a tie
+
+    if (
+      (player1.move === "rock" && player2.move === "scissors") ||
+      (player1.move === "paper" && player2.move === "rock") ||
+      (player1.move === "scissors" && player2.move === "paper")
+    ) {
+      return { playerId: player1.playerId };
+    } else {
+      return { playerId: player2.playerId };
+    }
+  }
 
   // Handle game result notification
   socket.on(
