@@ -2,22 +2,63 @@ import { Server, Socket } from "socket.io";
 import { userStatus } from "../userStatus";
 import { prisma } from "../../prisma";
 import { GameStatus } from "@prisma/client";
+import { GameType } from "@prisma/client"; // Import GameType for validation
 
 export const gameEvents = (socket: Socket, io: Server) => {
   // Notify game created
-  socket.on('C2S_CREATE_GAME', (gameId: string) => {
-    console.log(`Game ${gameId} created`);
-    io.emit('S2C_GAME_CREATED', { gameId });
-  });
+  socket.on(
+    "C2S_CREATE_GAME",
+    async (data: {
+      buyIn?: number;
+      maxPlayers: number;
+      gameType: GameType;
+    }) => {
+      console.log(`Creating game with data:`, data);
+      try {
+        const game = await prisma.game.create({
+          data: {
+            buyIn: data.buyIn,
+            maxPlayers: data.maxPlayers,
+            gameType: data.gameType,
+            status: GameStatus.OPEN,
+          },
+        });
+        io.emit("S2C_GAME_CREATED", { gameId: game.id });
+      } catch (error) {
+        console.error(`Failed to create game:`, error);
+        socket.emit("S2C_ERROR", {
+          message: "Failed to create the game. Please try again.",
+        });
+      }
+    }
+  );
 
   // Handle player joining a game room
-  socket.on("C2S_JOIN_GAME", (data: { gameId: string; playerId: string }) => {
-    console.log(`Player ${data.playerId} joined game ${data.gameId}`);
-    socket.join(data.gameId);
-    io.to(data.gameId).emit("S2C_PLAYER_JOINED", {
-      playerId: data.playerId,
-    });
-  });
+  socket.on(
+    "C2S_JOIN_GAME",
+    async (data: { gameId: string; playerId: string; team: number }) => {
+      console.log(`Player ${data.playerId} joining game ${data.gameId}`);
+      try {
+        const gameParticipant = await prisma.gameParticipant.create({
+          data: {
+            gameId: data.gameId,
+            playerId: data.playerId,
+            team: data.team,
+          },
+        });
+        socket.join(data.gameId);
+        io.to(data.gameId).emit("S2C_PLAYER_JOINED", {
+          playerId: data.playerId,
+          gameParticipant,
+        });
+      } catch (error) {
+        console.error(`Failed to join game:`, error);
+        socket.emit("S2C_ERROR", {
+          message: "Failed to join the game. Please try again.",
+        });
+      }
+    }
+  );
 
   // Handle game start notification
   socket.on("C2S_START_GAME", async (gameId: string) => {
@@ -25,11 +66,13 @@ export const gameEvents = (socket: Socket, io: Server) => {
     try {
       await prisma.game.update({
         where: { id: gameId },
-        data: { status: GameStatus.IN_PROGRESS }
+        data: { status: GameStatus.IN_PROGRESS },
       });
     } catch (error) {
       console.error(`Failed to update game status for game ${gameId}:`, error);
-      socket.emit('S2C_ERROR', { message: 'Failed to start the game. Please try again.' });
+      socket.emit("S2C_ERROR", {
+        message: "Failed to start the game. Please try again.",
+      });
       return;
     }
 
@@ -53,35 +96,43 @@ export const gameEvents = (socket: Socket, io: Server) => {
   );
 
   // Handle game result notification
-  socket.on("C2S_END_GAME", async (data: { gameId: string; winnerId: string }) => {
-    console.log(`Game ${data.gameId} ended. Winner is ${data.winnerId}`);
+  socket.on(
+    "C2S_END_GAME",
+    async (data: { gameId: string; winnerId: string }) => {
+      console.log(`Game ${data.gameId} ended. Winner is ${data.winnerId}`);
 
-    // Update the status of all participants
-    for (const userId in userStatus) {
-      if (userStatus[userId].gameId === data.gameId) {
-        userStatus[userId] = { status: "ONLINE" };
+      // Update the status of all participants
+      for (const userId in userStatus) {
+        if (userStatus[userId].gameId === data.gameId) {
+          userStatus[userId] = { status: "ONLINE" };
+        }
       }
-    }
-    try {
-      await prisma.game.update({
-        where: { id: data.gameId },
-        data: { status: GameStatus.CLOSED }
-      });
-    } catch (error) {
-      console.error(`Failed to update game status for game ${data.gameId}:`, error);
-      socket.emit('S2C_ERROR', { message: 'Failed to end the game. Please try again.' });
-      return;
-    }
+      try {
+        await prisma.game.update({
+          where: { id: data.gameId },
+          data: { status: GameStatus.CLOSED },
+        });
+      } catch (error) {
+        console.error(
+          `Failed to update game status for game ${data.gameId}:`,
+          error
+        );
+        socket.emit("S2C_ERROR", {
+          message: "Failed to end the game. Please try again.",
+        });
+        return;
+      }
 
-    io.to(data.gameId).emit("S2C_GAME_ENDED", {
-      winnerId: data.winnerId,
-    });
-  });
+      io.to(data.gameId).emit("S2C_GAME_ENDED", {
+        winnerId: data.winnerId,
+      });
+    }
+  );
 
   // Update game state
-  socket.on('C2S_UPDATE_GAME_STATE', (data: { gameId: string; state: any }) => {
+  socket.on("C2S_UPDATE_GAME_STATE", (data: { gameId: string; state: any }) => {
     console.log(`Updating game state for ${data.gameId}`);
-    io.to(data.gameId).emit('S2C_GAME_STATE_UPDATED', {
+    io.to(data.gameId).emit("S2C_GAME_STATE_UPDATED", {
       gameId: data.gameId,
       state: data.state,
     });
