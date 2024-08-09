@@ -8,9 +8,14 @@ function VersusLobby() {
   return (
     <div className="flexCol flex" style={{ margin: "5em 1em" }}>
       <Logo />
-      <div className="flexRow" style={{ margin: "2em 0", gap: "1em"}}>
-        <Button type="big" className="flex" onClick={() => navigate("/vs/buyin")}>Find a Match</Button>
-        <Button type="big" className="flex">Invite a Friend</Button>
+      <div className="flexCol" style={{ margin: "2em 0", gap: "1em" }}>
+        <div className="flexRow" style={{ gap: "1em" }}>
+          <Button type="big" className="flex" onClick={() => navigate("/vs/buyin", { state: { matchMethod: "matchmaking" } })}>Find a Match</Button>
+        </div>
+        <div className="flexRow" style={{ gap: "1em" }}>
+          <Button type="big" className="flex" onClick={() => navigate("/vs/buyin", { state: { matchMethod: "invite" } })}>Invite a friend</Button>
+          <Button type="big" className="flex">Join Game</Button>
+        </div>
       </div>
       <Button type="cancel" onClick={() => navigate(-1)}>Back</Button>
     </div>

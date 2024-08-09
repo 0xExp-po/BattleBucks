@@ -12,9 +12,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <TRPCProvider>
       <SocketProvider>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
       </SocketProvider>
     </TRPCProvider>
   </React.StrictMode>,
