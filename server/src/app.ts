@@ -33,7 +33,7 @@ app.get("/", (req, res) => {
 
 app.use("/panel", (_, res) => {
   return res.send(
-    renderTrpcPanel(appRouter, { url: `https://localhost:${process.env.PORT}${TRPC_ENDPOINT}` })
+    renderTrpcPanel(appRouter, { url: TRPC_ENDPOINT })
   );
 });
 
