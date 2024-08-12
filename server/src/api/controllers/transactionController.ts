@@ -4,6 +4,7 @@ import { commonResponse } from "../../interfaces/MessageResponse";
 import { prisma } from "../../prisma";
 
 const recordTransactionSchema = z.object({
+  txId: z.string(),
   senderId: z.string(),
   receiverId: z.string(),
   amount: z.number(),
