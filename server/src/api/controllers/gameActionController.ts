@@ -54,7 +54,7 @@ export const submitMove = privateProcedure
         // Update the game with the winner
         await prisma.game.update({
           where: { id: input.gameId },
-          data: { winner: winner?.playerId || null },
+          data: { winner: winner?.playerId || null, status: "CLOSED" },
         });
 
         return {
