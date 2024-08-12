@@ -56,7 +56,7 @@ channels:
       summary: Submit a move in a game
       operationId: submitMove
       message:
-        $ref: '#/components/messages/MoveSubmitted'
+        $ref: '#/components/messages/SubmitMove'
 
   /C2S_END_GAME:
     publish:
@@ -162,9 +162,15 @@ components:
       payload:
         type: object
         properties:
-          gameId:
+          buyIn:
+            type: number
+            description: The buy-in for the game
+          maxPlayers:
+            type: number
+            description: The maximum number of players for the game
+          gameType:
             type: string
-            description: Unique identifier for the game
+            description: The type of the game
     JoinGame:
       payload:
         type: object
@@ -175,13 +181,13 @@ components:
           playerId:
             type: string
             description: Unique identifier for the player
+          team:
+            type: number
+            description: The team number for the player
     StartGame:
       payload:
-        type: object
-        properties:
-          gameId:
-            type: string
-            description: Unique identifier for the game
+        type: string
+        description: Unique identifier for the game
     SubmitMove:
       payload:
         type: object
@@ -314,3 +320,16 @@ components:
           friendId:
             type: string
             description: Unique identifier for the friend
+    GameLog:
+      payload:
+        type: object
+        properties:
+          gameId:
+            type: string
+            description: Unique identifier for the game
+          playerId:
+            type: string
+            description: Unique identifier for the player
+          move:
+            type: string
+            description: The move made by the player
