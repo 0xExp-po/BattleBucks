@@ -2,6 +2,7 @@ import { z } from "zod";
 import { privateProcedure } from "../middlewares";
 import { commonResponse } from "../../interfaces/MessageResponse";
 import { prisma } from "../../prisma";
+import { determineWinner } from "../../utils/game";
 
 const submitMoveSchema = z.object({
   gameId: z.string(),
@@ -37,18 +38,24 @@ export const submitMove = privateProcedure
         include: { participants: true },
       });
 
-      if (game && game.participants.length === game.maxPlayers) {
+      if (game) {
         // All players have submitted their moves, determine the winner
         const gameLogs = await prisma.gameLog.findMany({
           where: { gameId: input.gameId },
+          orderBy: { createdAt: "asc" },
         });
-
-        const winner = determineWinner(gameLogs);
+        if (gameLogs.length % game.maxPlayers !== 0) {
+          return {
+            status: 200,
+            result: { success: false, winner: null },
+          };
+        }
+        const winner = determineWinner(gameLogs.slice(-game.maxPlayers));
 
         // Update the game with the winner
         await prisma.game.update({
           where: { id: input.gameId },
-          data: { winner: winner?.playerId || null },
+          data: { winner: winner?.playerId || null, status: "CLOSED" },
         });
 
         return {
@@ -69,25 +76,6 @@ export const submitMove = privateProcedure
       };
     }
   });
-
-function determineWinner(gameLogs: any[]): { playerId: string } | null {
-  // Implement rock-paper-scissors logic here
-  // This is a simplified version for two players
-  if (gameLogs.length !== 2) return null;
-
-  const [player1, player2] = gameLogs;
-  if (player1.move === player2.move) return null; // It's a tie
-
-  if (
-    (player1.move === "rock" && player2.move === "scissors") ||
-    (player1.move === "paper" && player2.move === "rock") ||
-    (player1.move === "scissors" && player2.move === "paper")
-  ) {
-    return { playerId: player1.playerId };
-  } else {
-    return { playerId: player2.playerId };
-  }
-}
 
 export const getGameLogs = privateProcedure
   .input(getGameLogsSchema)
