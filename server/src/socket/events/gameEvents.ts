@@ -3,6 +3,7 @@ import { userStatus } from "../userStatus";
 import { prisma } from "../../prisma";
 import { GameStatus } from "@prisma/client";
 import { GameType } from "@prisma/client"; // Import GameType for validation
+import { determineWinner } from "../../utils/game";
 
 export const gameEvents = (socket: Socket, io: Server) => {
   // Notify game created
@@ -108,9 +109,17 @@ export const gameEvents = (socket: Socket, io: Server) => {
           // All players have submitted their moves, determine the winner
           const gameLogs = await prisma.gameLog.findMany({
             where: { gameId: data.gameId },
+            orderBy: { createdAt: "asc" },
           });
 
-          const winner = determineWinner(gameLogs);
+          if (gameLogs.length % game.maxPlayers !== 0) {
+            return {
+              status: 200,
+              result: { success: false, winner: null },
+            };
+          }
+
+          const winner = determineWinner(gameLogs.slice(-game.maxPlayers));
 
           // Update the game with the winner
           await prisma.game.update({
@@ -138,24 +147,6 @@ export const gameEvents = (socket: Socket, io: Server) => {
       }
     }
   );
-
-  function determineWinner(gameLogs: any[]): { playerId: string } | null {
-    // Implement rock-paper-scissors logic here
-    if (gameLogs.length !== 2) return null;
-
-    const [player1, player2] = gameLogs;
-    if (player1.move === player2.move) return null; // It's a tie
-
-    if (
-      (player1.move === "rock" && player2.move === "scissors") ||
-      (player1.move === "paper" && player2.move === "rock") ||
-      (player1.move === "scissors" && player2.move === "paper")
-    ) {
-      return { playerId: player1.playerId };
-    } else {
-      return { playerId: player2.playerId };
-    }
-  }
 
   // Handle game result notification
   socket.on(
