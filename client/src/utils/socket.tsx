@@ -1,7 +1,7 @@
 import React, { createContext, useEffect } from "react"
 import io, { Socket } from "socket.io-client";
 
-const BaseUrl = "http://localhost:5001";
+const BaseUrl = "http://localhost:5000";
 
 const socket = io(BaseUrl, {
   query: {
@@ -22,17 +22,14 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     });
     // Function to handle cleanup actions
     const handleCleanup = () => {
-      socket.emit("userOffline", { userName: "@VJBass" });
       socket.disconnect();
     };
 
     window.addEventListener('beforeunload', handleCleanup);
 
-
     socket.on("disconnect", () => {
       console.log("disconnected from socket");
     })
-    socket.emit("userOnline", { userName: "VJBass" });
   }, []);
 
   return (

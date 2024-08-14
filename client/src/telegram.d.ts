@@ -13,7 +13,7 @@ declare namespace Telegram {
     id: number;
     first_name: string;
     last_name?: string;
-    username?: string;
+    username: string;
     language_code?: string;
   }
 

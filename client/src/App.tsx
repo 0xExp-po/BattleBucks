@@ -2,12 +2,12 @@ import React, { useState } from "react";
 import Welcome from "./views/Welcome";
 import Profile from "./views/Profile";
 import Versus from "./views/Versus/Versus";
-import BattleRoyale from "./views/BattleRoyale";
 import MatchHistory from "./views/MatchHistory";
 import VersusLobby from "./views/VersusLobby";
 import VersusBuyin from "./views/VersusBuyin/VersusBuyin";
 import GameEnd from "./views/GameEnd";
 import ViewTransition from "./components/ViewTransition";
+import BRLobby from "./views/BRLobby/BRLobby";
 import { useLocation, useRoutes } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { LanguageContext, LANGUAGE_ENGLISH } from "./hooks/useLocalization";
@@ -36,8 +36,8 @@ function App() {
       element: <ViewTransition><VersusBuyin /></ViewTransition>
     },
     {
-      path: "/br",
-      element: <ViewTransition><BattleRoyale /></ViewTransition>
+      path: "/br/lobby",
+      element: <ViewTransition><BRLobby /></ViewTransition>
     },
     {
       path: "/matches",
