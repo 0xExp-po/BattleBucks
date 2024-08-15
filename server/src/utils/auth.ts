@@ -44,7 +44,7 @@ export function verifyTelegramLogin(
 }
 
 export function generateToken(userId: string): string {
-  const secretKey = process.env.SOCKET_TOKEN;
+  const secretKey = process.env.JWT_SECRET;
 
   if (!secretKey) {
     throw new Error("JWT_SECRET_KEY is not defined in environment variables");

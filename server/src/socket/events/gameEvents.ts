@@ -1,10 +1,12 @@
 import { Server, Socket } from "socket.io";
 import { userStatus } from "../userStatus";
 import { prisma } from "../../prisma";
-import { GameStatus } from "@prisma/client";
+import { GameStatus, MoveType } from "@prisma/client";
 import { GameType } from "@prisma/client"; // Import GameType for validation
+import { determineWinner } from "../../utils/game";
+import { CustomSocket } from "..";
 
-export const gameEvents = (socket: Socket, io: Server) => {
+export const gameEvents = (socket: CustomSocket, io: Server) => {
   // Notify game created
   socket.on(
     "C2S_CREATE_GAME",
@@ -19,6 +21,7 @@ export const gameEvents = (socket: Socket, io: Server) => {
           data: {
             buyIn: data.buyIn,
             maxPlayers: data.maxPlayers,
+            eliminatedPlayersCnt: 0,
             gameType: data.gameType,
             status: GameStatus.OPEN,
           },
@@ -34,31 +37,27 @@ export const gameEvents = (socket: Socket, io: Server) => {
   );
 
   // Handle player joining a game room
-  socket.on(
-    "C2S_JOIN_GAME",
-    async (data: { gameId: string; playerId: string; team: number }) => {
-      console.log(`Player ${data.playerId} joining game ${data.gameId}`);
-      try {
-        const gameParticipant = await prisma.gameParticipant.create({
-          data: {
-            gameId: data.gameId,
-            playerId: data.playerId,
-            team: data.team,
-          },
-        });
-        socket.join(data.gameId);
-        io.to(data.gameId).emit("S2C_PLAYER_JOINED", {
-          playerId: data.playerId,
-          gameParticipant,
-        });
-      } catch (error) {
-        console.error(`Failed to join game:`, error);
-        socket.emit("S2C_ERROR", {
-          message: "Failed to join the game. Please try again.",
-        });
-      }
+  socket.on("C2S_JOIN_GAME", async (data: { gameId: string }) => {
+    console.log(`Player ${socket.user.userId} joining game ${data.gameId}`);
+    try {
+      const gameParticipant = await prisma.gameParticipant.create({
+        data: {
+          gameId: data.gameId,
+          playerId: userStatus[socket.id].userId || "",
+        },
+      });
+      socket.join(data.gameId);
+      io.to(data.gameId).emit("S2C_PLAYER_JOINED", {
+        playerId: socket.user.userId,
+        gameParticipant,
+      });
+    } catch (error) {
+      console.error(`Failed to join game:`, error);
+      socket.emit("S2C_ERROR", {
+        message: "Failed to join the game. Please try again.",
+      });
     }
-  );
+  });
 
   // Handle game start notification
   socket.on("C2S_START_GAME", async (gameId: string) => {
@@ -84,51 +83,87 @@ export const gameEvents = (socket: Socket, io: Server) => {
   // Handle move submission in a game
   socket.on(
     "C2S_SUBMIT_MOVE",
-    async (data: { gameId: string; playerId: string; move: string }) => {
+    async (data: { gameId: string; move: MoveType; round: number }) => {
       console.log(
-        `Player ${data.playerId} submitted move in game ${data.gameId}`
+        `Player ${socket.user.userId} submitted move in game ${data.gameId}`
       );
       try {
         // Log the move in the database
         await prisma.gameLog.create({
           data: {
             gameId: data.gameId,
-            playerId: data.playerId,
+            playerId: socket.user.userId,
             move: data.move,
+            round: data.round,
           },
         });
 
         // Check if all players have submitted their moves
         const game = await prisma.game.findUnique({
           where: { id: data.gameId },
-          include: { participants: true },
+          include: {
+            participants: true, // Include participants to check how many are left
+          },
         });
 
-        if (game && game.participants.length === game.maxPlayers) {
-          // All players have submitted their moves, determine the winner
+        if (game) {
+          // All players have submitted their moves, determine the remaining players
+          const num = game.maxPlayers - game.eliminatedPlayersCnt;
           const gameLogs = await prisma.gameLog.findMany({
-            where: { gameId: data.gameId },
+            where: { gameId: data.gameId, round: data.round },
+            orderBy: { createdAt: "asc" },
+            take: num,
           });
 
-          const winner = determineWinner(gameLogs);
+          if (gameLogs.length < game.maxPlayers - game.eliminatedPlayersCnt) {
+            return {
+              status: 200,
+              result: { success: false, winner: null },
+            };
+          }
 
-          // Update the game with the winner
-          await prisma.game.update({
-            where: { id: data.gameId },
-            data: { winner: winner?.playerId || null },
-          });
+          // Determine the remaining and eliminated players
+          const result = determineWinner(gameLogs);
 
-          io.to(data.gameId).emit("S2C_MOVE_SUBMITTED", {
-            playerId: data.playerId,
-            move: data.move,
-            winner: winner?.playerId || null,
-          });
-        } else {
-          io.to(data.gameId).emit("S2C_MOVE_SUBMITTED", {
-            playerId: data.playerId,
-            move: data.move,
-            winner: null,
-          });
+          if (result === "draw") {
+            io.to(data.gameId).emit("S2C_DRAW", {
+              message: "It's a draw! Replay the round.",
+            });
+          } else {
+            // Handle the remaining and eliminated players
+            const { remainingPlayers, eliminatedPlayers } = result;
+
+            // Update the game with the winner or continue with remaining players
+            if (remainingPlayers.length === 1) {
+              // Only one player remains, declare them the winner
+              const winnerId = remainingPlayers[0];
+              await prisma.game.update({
+                where: { id: data.gameId },
+                data: { winner: winnerId, status: GameStatus.CLOSED },
+              });
+
+              io.to(data.gameId).emit("S2C_MOVE_SUBMITTED", {
+                playerId: socket.user.userId,
+                move: data.move,
+                winner: winnerId,
+              });
+            } else {
+              // Multiple players remain, continue the game
+              io.to(data.gameId).emit("S2C_MOVE_SUBMITTED", {
+                playerId: socket.user.userId,
+                move: data.move,
+                remainingPlayers,
+                eliminatedPlayers,
+              });
+
+              // Optionally, notify the eliminated players
+              for (const playerId of eliminatedPlayers) {
+                io.to(playerId).emit("S2C_ELIMINATED", {
+                  message: "You have been eliminated from the game.",
+                });
+              }
+            }
+          }
         }
       } catch (error) {
         console.error(`Failed to submit move:`, error);
@@ -139,24 +174,6 @@ export const gameEvents = (socket: Socket, io: Server) => {
     }
   );
 
-  function determineWinner(gameLogs: any[]): { playerId: string } | null {
-    // Implement rock-paper-scissors logic here
-    if (gameLogs.length !== 2) return null;
-
-    const [player1, player2] = gameLogs;
-    if (player1.move === player2.move) return null; // It's a tie
-
-    if (
-      (player1.move === "rock" && player2.move === "scissors") ||
-      (player1.move === "paper" && player2.move === "rock") ||
-      (player1.move === "scissors" && player2.move === "paper")
-    ) {
-      return { playerId: player1.playerId };
-    } else {
-      return { playerId: player2.playerId };
-    }
-  }
-
   // Handle game result notification
   socket.on(
     "C2S_END_GAME",
@@ -164,11 +181,13 @@ export const gameEvents = (socket: Socket, io: Server) => {
       console.log(`Game ${data.gameId} ended. Winner is ${data.winnerId}`);
 
       // Update the status of all participants
-      for (const userId in userStatus) {
-        if (userStatus[userId].gameId === data.gameId) {
-          userStatus[userId] = { status: "ONLINE" };
+      for (const socketId in userStatus) {
+        const user = userStatus[socketId];
+        if (user.gameId === data.gameId) {
+          userStatus[socketId] = { ...user, status: "ONLINE" };
         }
       }
+
       try {
         await prisma.game.update({
           where: { id: data.gameId },

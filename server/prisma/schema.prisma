@@ -59,23 +59,23 @@ model Notification {
 }
 
 model Game {
-  id           String            @id @default(uuid())
-  buyIn        Float?            @default(0)
-  maxPlayers   Int
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
-  gameType     GameType          @default(v1v1)
-  participants GameParticipant[]
-  gameHistory  GameLog[]
-  status       GameStatus        @default(OPEN)
-  winner       String?
+  id                   String            @id @default(uuid())
+  buyIn                Float             @default(0)
+  maxPlayers           Int
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  gameType             GameType          @default(v1v1)
+  eliminatedPlayersCnt Int
+  participants         GameParticipant[]
+  gameHistory          GameLog[]
+  status               GameStatus        @default(OPEN)
+  winner               String?
 }
 
 model GameParticipant {
   id        Int      @id @default(autoincrement())
   gameId    String
   playerId  String
-  team      Int // Use this to distinguish teams (e.g., 1 for Team 1, 2 for Team 2)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -90,8 +90,9 @@ model GameParticipant {
 model GameLog {
   id        Int      @id @default(autoincrement())
   gameId    String
+  round     Int      @default(0)
   playerId  String
-  move      String // rock, paper, scissors
+  move      MoveType
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   game      Game     @relation(fields: [gameId], references: [id])
@@ -107,6 +108,7 @@ model Transaction {
   senderId   String
   receiverId String
   userId     String
+  txId       String   @unique
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   receiver   User     @relation("receiver", fields: [receiverId], references: [id])
@@ -126,5 +128,18 @@ enum GameType {
 enum GameStatus {
   OPEN
   IN_PROGRESS
+  WAITING_FRIEND
   CLOSED
+}
+
+enum FriendStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum MoveType {
+  ROCK
+  PAPER
+  SCISSORS
 }

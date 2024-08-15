@@ -1,33 +1,23 @@
-import { Server, Socket } from 'socket.io';
-import { userStatus } from '../userStatus';
+import { Server, Socket } from "socket.io";
+import { userStatus } from "../userStatus";
+import { CustomSocket } from "..";
 
-export const userEvents = (socket: Socket, io: Server) => {
-  // Handle user joining the socket (set status to ONLINE)
-  socket.on('join', (userId: string) => {
-    console.log(`User ${userId} joined the socket`);
-    userStatus[userId] = { status: 'ONLINE' };
-    socket.join(userId);
-  });
-
-  // Handle user disconnecting (set status to OFFLINE)
-  socket.on('disconnect', () => {
-    console.log('User disconnected');
-    const userId = socket.handshake.query.userId as string; // Assuming userId is passed as a query param
-    if (userId) {
-      userStatus[userId] = { status: 'OFFLINE' };
-    }
-  });
-
+export const userEvents = (socket: CustomSocket, io: Server) => {
   // Handle user joining a game (set status to GAMING)
-  socket.on('C2S_JOIN_GAME', (data: { userId: string; gameId: string }) => {
-    console.log(`User ${data.userId} joined game ${data.gameId}`);
-    userStatus[data.userId] = { status: 'GAMING', gameId: data.gameId };
+  socket.on("C2S_JOIN_GAME", (data: { gameId: string }) => {
+    console.log(`User ${socket.id} joined game ${data.gameId}`);
+    userStatus[socket.id] = {
+      ...userStatus[socket.id],
+      status: "GAMING",
+      gameId: data.gameId,
+    };
     socket.join(data.gameId);
   });
 
   // Handle user leaving a game (set status back to ONLINE)
-  socket.on('C2S_LEAVE_GAME', (data: { userId: string }) => {
-    console.log(`User ${data.userId} left the game`);
-    userStatus[data.userId] = { status: 'ONLINE' };
+  socket.on("C2S_LEAVE_GAME", (data: { gameId: string }) => {
+    console.log(`User ${socket.id} left the game`);
+    userStatus[socket.id] = { ...userStatus[socket.id], status: "ONLINE" };
+    socket.leave(data.gameId);
   });
 };
