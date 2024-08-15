@@ -9,6 +9,7 @@ import { timeout } from "../../utils/timeout";
 import { trpc } from "../../trpc/trpc";
 import { Game } from "../../utils/types";
 import "./VersusBuyin.scss";
+import MatchFoundOverlay from "../../components/MatchFoundOverlay/MatchFoundOverlay";
 
 enum State {
   Idle,
@@ -102,12 +103,7 @@ function VersusBuyin() {
         <Button type="big" disabled={state !== State.Idle} style={{ width: "60%" }} onClick={() => navigate("/versus")}>$5</Button>
       </motion.div>
       <Button type="cancel" disabled={state !== State.Idle} onClick={() => navigate(-1)}>Back</Button>
-      <motion.div
-        style={{ transform: state === State.Found ? "translateX(100%)" : "translateX(-100%)", transitionDuration: matchFoundTextDuration + "ms" }}
-        className="matchFoundOverlay"
-      >
-        <h1 className="matchFoundText">Match Found!</h1>
-      </motion.div>
+      <MatchFoundOverlay trigger={state === State.Found} duration={matchFoundTextDuration} />
     </div>
   );
 }

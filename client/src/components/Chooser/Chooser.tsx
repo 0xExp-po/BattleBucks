@@ -14,7 +14,7 @@ function Chooser(props: ChooserProps) {
         {props.options.map(option => {
           const value = typeof option === "object" ? option.value : option;
           const label = typeof option === "object" ? option.label : option;
-          return <option key={value} value={value}>{label}</option>;
+          return <option key={value ?? null} value={value}>{label}</option>;
         })}
       </select>
     </div>

@@ -1,88 +1,45 @@
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import { timeout } from "../../utils/timeout";
-import Chooser from "../../components/Chooser/Chooser";
-import Pill from "../../components/Pill";
 import Loader from "../../components/Loader/Loader";
-
-interface Game {
-  currentPlayers: number;
-  maxPlayers: number;
-  buyin: number;
-}
-
-const initGames = [
-  {
-    currentPlayers: 5,
-    maxPlayers: 32,
-    buyin: 5,
-  },
-  {
-    currentPlayers: 12,
-    maxPlayers: 64,
-    buyin: 2,
-  },
-  {
-    currentPlayers: 1,
-    maxPlayers: 16,
-    buyin: 10,
-  },
-  {
-    currentPlayers: 33,
-    maxPlayers: 64,
-    buyin: 2,
-  }
-];
+import Logo from "../../components/Logo/Logo";
+import Button from "../../components/Button/Button";
+import { useNavigate } from "react-router";
+import { timeout } from "../../utils/timeout";
+import MatchFoundOverlay from "../../components/MatchFoundOverlay/MatchFoundOverlay";
 
 function BRLobby() {
-  const [loading, setLoading] = useState(false);
-  const [allGames, setAllGames] = useState<Game[]>([]);
-  const [buyin, setBuyin] = useState<number>();
-  const [maxPlayers, setMaxPlayers] = useState<number>();
+  const [currentPlayers, setCurrentPlayers] = useState(15);
+  const [maxPlayers, setMaxPlayers] = useState(32);
+  const [gameReady, setGameReady] = useState(false);
+  const navigate = useNavigate();
+
+  const textDuration = 2000;
+
+  const startGame = async () => {
+    await timeout(3000);
+    setGameReady(true)
+    await timeout(textDuration);
+    navigate("/br");
+  }
 
   useEffect(() => {
-    const interval = setInterval(async () => {
-      setLoading(true);
-      await timeout(2000);
-      setAllGames(initGames);
-      setLoading(false);
-    }, 5000);
-    return () => clearInterval(interval);
+    startGame();
   }, []);
 
-  const joinGame = (game: Game) => {
-    console.log("joined game", game);
-  };
-
-  let games = allGames;
-  if (buyin) games = games.filter(game => game.buyin === buyin);
-  if (maxPlayers) games = games.filter(game => game.maxPlayers === maxPlayers);
-
   return (
-    <div className="flexCol flex" style={{ margin: "1em" }}>
-      <Pill>
-        <h3 style={{ fontFamily: "Bangers" }}>Battle Royale</h3>
-        <div className="flexRow" style={{ gap: "1em" }}>
-          <Chooser label="Buyin:" options={[undefined, 1, 2]} onChange={e => setBuyin(Number.parseInt(e.target.value))} />
-          <Chooser label="Max Players:" options={[undefined, 8, 16, 32, 64]} onChange={e => setMaxPlayers(Number.parseInt(e.target.value))}/>
+    <div className="flexCol flex center" style={{ margin: "1em", gap: "1em" }}>
+      <Logo />
+      <Loader label="Waiting for game..." />
+      <h3>
+        Players:
+        <div className="flexRow center" style={{ gap: "1em" }}>
+          <b>{currentPlayers}</b> / <b>{maxPlayers}</b>
         </div>
-      </Pill>
-      <motion.div animate={{ opacity: loading ? 1 : 0, transition: { duration: 0.1, ease: "easeOut" } }}>
-        <Loader />
-      </motion.div>
-      {games.length > 0 &&
-        <Pill style={{ alignItems: "stretch", gap: "1em", padding: "1em" }}>
-          {games.map((game, i) => (
-            <button key={i} onClick={() => joinGame(game)}>
-              <Pill style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                <div><b>{game.currentPlayers}</b> / <b>{game.maxPlayers}</b></div>
-                <div>${game.buyin}</div>
-              </Pill>
-            </button>
-          ))}
-        </Pill>
-      }
-    </div >
+      </h3>
+      <div className="flexRow" style={{ width: "100%" }}>
+        <Button className="flexRow flex" style={{ margin: "2em" }} onClick={() => navigate("/")}>Exit</Button>
+      </div>
+      <MatchFoundOverlay trigger={gameReady} duration={textDuration} />
+    </div>
   );
 }
 

@@ -32,7 +32,7 @@ function Welcome() {
       <h4>{l(LanguageString.welcomeBack)}, <b style={{ color: "rgb(229, 243, 255)" }}>{initDataUnsafe.user?.first_name ?? "Player"}</b>!</h4>
       <div className="flexCol" style={{ margin: "2em 0", gap: "1em" }}>
         <Button type="big" colorfulBorder onClick={() => navigate("/vs/lobby")}>1v1</Button>
-        <Button type="big" comingSoonBanner onClick={() => navigate("/br/lobby")}>Battle Royale</Button>
+        <Button type="big" comingSoonBanner onClick={() => navigate("/br/games")}>Battle Royale</Button>
       </div>
       <Button onClick={() => navigate("/profile")}><div style={{ fontSize: "1em" }}>Profile</div></Button>
     </div>

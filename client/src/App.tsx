@@ -7,11 +7,14 @@ import VersusLobby from "./views/VersusLobby";
 import VersusBuyin from "./views/VersusBuyin/VersusBuyin";
 import GameEnd from "./views/GameEnd";
 import ViewTransition from "./components/ViewTransition";
-import BRLobby from "./views/BRLobby/BRLobby";
+import BRGameList from "./views/BRGameList/BRGameList";
+import BRCreate from "./views/BRCreate/BRCreate";
 import { useLocation, useRoutes } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { LanguageContext, LANGUAGE_ENGLISH } from "./hooks/useLocalization";
 import { LanguageString } from "./utils/types";
+import BRLobby from "./views/BRLobby/BRLobby";
+import BattleRoyale from "./views/BattleRoyale";
 
 function App() {
   const element = useRoutes([
@@ -34,6 +37,18 @@ function App() {
     {
       path: "/vs/buyin",
       element: <ViewTransition><VersusBuyin /></ViewTransition>
+    },
+    {
+      path: "/br",
+      element: <ViewTransition><BattleRoyale /></ViewTransition>
+    },
+    {
+      path: "/br/games",
+      element: <ViewTransition><BRGameList /></ViewTransition>
+    },
+    {
+      path: "/br/create",
+      element: <ViewTransition><BRCreate /></ViewTransition>
     },
     {
       path: "/br/lobby",
