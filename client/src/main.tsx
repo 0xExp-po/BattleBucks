@@ -9,13 +9,11 @@ import "./index.scss";
 window.Telegram.WebApp.ready();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <TRPCProvider>
-      <SocketProvider>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
-      </SocketProvider>
-    </TRPCProvider>
-  </React.StrictMode>,
+  <TRPCProvider>
+    <SocketProvider>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </SocketProvider>
+  </TRPCProvider>
 )
