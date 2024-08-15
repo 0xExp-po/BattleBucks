@@ -1,15 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router";
+import { timeout } from "../../utils/timeout";
 import Loader from "../../components/Loader/Loader";
 import Logo from "../../components/Logo/Logo";
 import Button from "../../components/Button/Button";
-import { useNavigate } from "react-router";
-import { timeout } from "../../utils/timeout";
 import MatchFoundOverlay from "../../components/MatchFoundOverlay/MatchFoundOverlay";
 
 function BRLobby() {
   const [currentPlayers, setCurrentPlayers] = useState(15);
   const [maxPlayers, setMaxPlayers] = useState(32);
   const [gameReady, setGameReady] = useState(false);
+  const rendered = useRef(true);
   const navigate = useNavigate();
 
   const textDuration = 2000;
@@ -18,11 +19,12 @@ function BRLobby() {
     await timeout(3000);
     setGameReady(true)
     await timeout(textDuration);
-    navigate("/br");
+    rendered && navigate("/br");
   }
 
   useEffect(() => {
     startGame();
+    return () => { rendered.current = false };
   }, []);
 
   return (
