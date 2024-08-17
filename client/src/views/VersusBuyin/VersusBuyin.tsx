@@ -1,11 +1,14 @@
 import Logo from "../../components/Logo/Logo";
 import Button from "../../components/Button/Button";
 import Loader from "../../components/Loader/Loader";
-import { useEffect, useRef, useState } from "react";
+import SocketContext from "../../utils/socket";
+import MatchFoundOverlay from "../../components/MatchFoundOverlay/MatchFoundOverlay";
+import { useContext, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { motion } from "framer-motion";
 import { timeout } from "../../utils/timeout";
 import { trpc } from "../../trpc/trpc";
+import { Game } from "../../utils/types";
 import "./VersusBuyin.scss";
 
 enum State {
@@ -20,6 +23,8 @@ function VersusBuyin() {
   const navigate = useNavigate();
   const location = useLocation();
   const [state, setState] = useState<State>(State.Idle);
+  const [game, setGame] = useState<Game>();
+  const socket = useContext(SocketContext);
 
   const mutation = trpc.game.createGame.useMutation();
 
@@ -31,12 +36,20 @@ function VersusBuyin() {
     return <div></div>;
   }
 
+  const startMatchmaking = async () => {
+    // TODO
+    console.log("matchmaking");
+  }
+
   // example implementation
-  const startNewGame = async () => {
+  const startCustomLobby = async () => {
     setState(State.Searching);
+
     const response = await mutation.mutateAsync({ gameType: "v1v1", buyIn: 1, maxPlayers: 2 })
+
     if (!response.result || response.status != 200) {
       console.error("Error while starting new game: ", response.error);
+      setState(State.Idle);
       return;
     }
     const g = response.result.game;
@@ -51,7 +64,13 @@ function VersusBuyin() {
       updatedAt: new Date(g.updatedAt),
     };
 
-    console.log(game);
+    socket.on("S2C_GAME_CREATED", async () => {
+      console.log("CRATED")
+      await timeout(matchFoundTextDuration);
+      navigate("/versus");
+    });
+
+    console.info(game);
   }
 
   const startNewFakeGame = async () => {
@@ -74,21 +93,17 @@ function VersusBuyin() {
     <div className="flexCol flex" style={{ margin: "1em" }}>
       <Logo />
       <h2>Choose buy-in!</h2>
+      {game && <div style={{ height: "2em" }}>{game.id}</div>}
       <motion.div style={messageStyle}>
         <Loader style={{ overflow: "hidden", fontWeight: "bold" }} label={state === State.Found ? "Match found!" : "Searching..."} />
       </motion.div>
       <motion.div className="flexCol center" style={{ margin: "1em 0", gap: "1em" }}>
-        <Button type="big" disabled={state !== State.Idle} style={{ width: "60%" }} onClick={() => startNewGame()}>$1</Button>
+        <Button type="big" disabled={state !== State.Idle} style={{ width: "60%" }} onClick={() => startCustomLobby()}>$1</Button>
         <Button type="big" disabled={state !== State.Idle} style={{ width: "60%" }} onClick={() => startNewFakeGame()}>$2</Button>
         <Button type="big" disabled={state !== State.Idle} style={{ width: "60%" }} onClick={() => navigate("/versus")}>$5</Button>
       </motion.div>
       <Button type="cancel" disabled={state !== State.Idle} onClick={() => navigate(-1)}>Back</Button>
-      <motion.div
-        style={{ transform: state === State.Found ? "translateX(100%)" : "translateX(-100%)", transitionDuration: matchFoundTextDuration + "ms" }}
-        className="matchFoundOverlay"
-      >
-        <h1 className="matchFoundText">Match Found!</h1>
-      </motion.div>
+      <MatchFoundOverlay trigger={state === State.Found} duration={matchFoundTextDuration} />
     </div>
   );
 }

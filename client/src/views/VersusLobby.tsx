@@ -1,9 +1,37 @@
 import { useNavigate } from "react-router";
+import { useContext, useRef } from "react";
+import { trpc } from "../trpc/trpc";
 import Button from "../components/Button/Button";
 import Logo from "../components/Logo/Logo";
+import useTelegramData from "../hooks/useTelegramData";
+import SocketContext from "../utils/socket";
+import { timeout } from "../utils/timeout";
 
 function VersusLobby() {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const socket = useContext(SocketContext);
   const navigate = useNavigate();
+
+  const mutation = trpc.game.joinGame.useMutation();
+  const telegramData = useTelegramData();
+
+  const joinGame = () => {
+    if (!inputRef.current?.value) {
+      return;
+    }
+    if (!telegramData.initDataUnsafe.user) {
+      console.info("no user");
+      return;
+    }
+    mutation.mutate({ gameId: inputRef.current.value, playerId: telegramData.initDataUnsafe.user.username, team: 1 });
+    socket.emit("C2S_JOIN_GAME");
+
+    socket.on("C2S_GAME_CREATED", async () => {
+      console.log("CRATED")
+      await timeout(2000);
+      navigate("/versus");
+    });
+  };
 
   return (
     <div className="flexCol flex" style={{ margin: "5em 1em" }}>
@@ -14,8 +42,9 @@ function VersusLobby() {
         </div>
         <div className="flexRow" style={{ gap: "1em" }}>
           <Button type="big" className="flex" onClick={() => navigate("/vs/buyin", { state: { matchMethod: "invite" } })}>Invite a friend</Button>
-          <Button type="big" className="flex">Join Game</Button>
+          <Button type="big" className="flex" onClick={joinGame}>Join Game</Button>
         </div>
+        <input type="text" ref={inputRef} />
       </div>
       <Button type="cancel" onClick={() => navigate(-1)}>Back</Button>
     </div>

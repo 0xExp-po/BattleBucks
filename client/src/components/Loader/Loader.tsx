@@ -9,7 +9,7 @@ interface LoaderProps {
 
 function Loader(props: LoaderProps) {
   return (
-    <div className="flex center" style={props.style}>
+    <div className="flexRow center" style={props.style}>
       <img src={LoaderImg} className="loaderImg" alt="loader" />
       {props.label && <div>{props.label}</div>}
     </div>
