@@ -46,11 +46,11 @@ function BRGameList() {
   useEffect(() => {
     const refetch = async () => {
       setLoading(true);
-      await timeout(2000);
+      await timeout(1000);
       setAllGames(initGames);
       setLoading(false);
     }
-    const interval = setInterval(refetch, 5000);
+    const interval = setInterval(refetch, 2000);
     refetch();
     return () => clearInterval(interval);
   }, []);
@@ -69,8 +69,8 @@ function BRGameList() {
       <Pill>
         <h3 style={{ fontFamily: "Bangers" }}>Battle Royale</h3>
         <div className="flexRow" style={{ gap: "1em" }}>
-          <Chooser label="Buyin:" options={[undefined, 1, 2]} onChange={e => setBuyin(Number.parseInt(e.target.value))} />
-          <Chooser label="Max Players:" options={[undefined, 8, 16, 32, 64]} onChange={e => setMaxPlayers(Number.parseInt(e.target.value))} />
+          <Chooser label="Buyin:" options={[undefined, 1, 2]} onChange={(e) => setBuyin(e as number | undefined)} />
+          <Chooser label="Max Players:" options={[undefined, 8, 16, 32, 64]} onChange={e => setMaxPlayers(e as number | undefined)} />
         </div>
         <Button type="accept" style={{ fontSize: "0.75em", marginTop: "2em", padding: "0" }} onClick={() => navigate("/br/create")}>Create Game</Button>
       </Pill>
@@ -83,8 +83,8 @@ function BRGameList() {
             <button key={i} onClick={() => joinGame(game)}>
               <Pill style={{ alignItems: "stretch" }}>
                 <div className="flexRow flex" style={{ justifyContent: "space-between" }}>
-                  <div><b>Username</b></div>
-                  <div>Stat</div>
+                  <div>bo1/bo3/bo5</div>
+                  <div>Distribucija nagrada</div>
                 </div>
                 <div className="flexRow flex" style={{ justifyContent: "space-between" }}>
                   <div><b>{game.currentPlayers}</b> / <b>{game.maxPlayers}</b></div>

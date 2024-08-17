@@ -2,6 +2,7 @@ import Logo from "../../components/Logo/Logo";
 import Button from "../../components/Button/Button";
 import Loader from "../../components/Loader/Loader";
 import SocketContext from "../../utils/socket";
+import MatchFoundOverlay from "../../components/MatchFoundOverlay/MatchFoundOverlay";
 import { useContext, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { motion } from "framer-motion";
@@ -9,7 +10,6 @@ import { timeout } from "../../utils/timeout";
 import { trpc } from "../../trpc/trpc";
 import { Game } from "../../utils/types";
 import "./VersusBuyin.scss";
-import MatchFoundOverlay from "../../components/MatchFoundOverlay/MatchFoundOverlay";
 
 enum State {
   Idle,

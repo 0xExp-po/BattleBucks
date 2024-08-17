@@ -9,12 +9,12 @@ import GameEnd from "./views/GameEnd";
 import ViewTransition from "./components/ViewTransition";
 import BRGameList from "./views/BRGameList/BRGameList";
 import BRCreate from "./views/BRCreate/BRCreate";
+import BRLobby from "./views/BRLobby/BRLobby";
+import BattleRoyale from "./views/BattleRoyale";
 import { useLocation, useRoutes } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { LanguageContext, LANGUAGE_ENGLISH } from "./hooks/useLocalization";
 import { LanguageString } from "./utils/types";
-import BRLobby from "./views/BRLobby/BRLobby";
-import BattleRoyale from "./views/BattleRoyale";
 
 function App() {
   const element = useRoutes([

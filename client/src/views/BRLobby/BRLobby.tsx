@@ -18,8 +18,8 @@ function BRLobby() {
   const startGame = async () => {
     await timeout(3000);
     setGameReady(true)
-    await timeout(textDuration);
-    rendered && navigate("/br");
+    //await timeout(textDuration);
+    //rendered.current && navigate("/br");
   }
 
   useEffect(() => {

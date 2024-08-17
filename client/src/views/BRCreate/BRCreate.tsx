@@ -17,8 +17,8 @@ function BRCreate() {
     <div className="flexCol flex" style={{ margin: "1em", gap: "1em" }}>
       <Logo />
       <h2>Create Game</h2>
-      <Chooser label="Buyin:" options={[undefined, 1, 2]} onChange={e => setBuyin(Number.parseInt(e.target.value))} />
-      <Chooser label="Max Players:" options={[undefined, 8, 16, 32, 64]} onChange={e => setMaxPlayers(Number.parseInt(e.target.value))} />
+      <Chooser label="Buyin:" options={[undefined, 1, 2, 5]} onChange={e => setBuyin(e as number | undefined)} />
+      <Chooser label="Max Players:" options={[undefined, 8, 16, 32, 64]} onChange={e => setMaxPlayers(e as number | undefined)} />
       <Button onClick={createGame}>Create</Button>
     </div>
   );
