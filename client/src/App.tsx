@@ -11,10 +11,10 @@ import BRGameList from "./views/BRGameList/BRGameList";
 import BRCreate from "./views/BRCreate/BRCreate";
 import BRLobby from "./views/BRLobby/BRLobby";
 import BattleRoyale from "./views/BattleRoyale";
-import { useLocation, useRoutes } from "react-router-dom";
+import { useRoutes } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
-import { LanguageContext, LANGUAGE_ENGLISH } from "./hooks/useLocalization";
-import { LanguageString } from "./utils/types";
+import { SocketProvider } from "./utils/socket";
+import { useTelegram } from "./utils/telegram";
 
 function App() {
   const element = useRoutes([
@@ -64,30 +64,24 @@ function App() {
     },
   ]);
 
-  const [language, setLanguage] = useState(LANGUAGE_ENGLISH);
-
-  const location = useLocation();
-
-  const getString = (s: LanguageString, ...s2: string[]) => {
-    let str = language[s] as string || LANGUAGE_ENGLISH[s];
-    if (!str) return "?";
-    for (let i = 0; i < s2.length; i++) {
-      str.replace("$" + i, s2[i]);
-    }
-    return str;
-  }
-
   if (!element) return <div></div>;
 
+  const telegram = useTelegram();
+  const token = telegram.initData?.token;
+
+  if (!token) {
+    return <div></div>;
+  }
+
   return (
-    <LanguageContext.Provider value={{ l: getString, language, setLanguage }}>
+    <SocketProvider token={token}>
       <div className="flexCol flex" style={{ overflowX: "hidden" }}>
         <AnimatePresence mode="wait" initial={false}>
           {React.cloneElement(element, { key: location.pathname })}
         </AnimatePresence>
       </div>
       {/* {true && <Tutorial />} */}
-    </LanguageContext.Provider>
+    </SocketProvider>
   );
 }
 

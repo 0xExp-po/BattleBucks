@@ -1,6 +1,6 @@
 import Eng from "../../assets/eng.avif";
 import Rus from "../../assets/rus.avif";
-import { LANGUAGE_ENGLISH, LANGUAGE_RUSSIAN, useLanguage } from "../../hooks/useLocalization";
+import { LANGUAGE_ENGLISH, LANGUAGE_RUSSIAN, useLanguage } from "../../utils/localization";;
 import "./LanguageBubble.scss";
 
 function LanguageBubble() {

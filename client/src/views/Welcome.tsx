@@ -1,16 +1,16 @@
 import Button from "../components/Button/Button";
-import useTelegramData from "../hooks/useTelegramData";
 import Logo from "../components/Logo/Logo";
 import LanguageBubble from "../components/LanguageBubble/LanguageBubble";
+import { useTelegram } from "../utils/telegram";
 import { useNavigate } from "react-router";
-import { useLanguage } from "../hooks/useLocalization";
+import { useLanguage } from "../utils/localization";
 import { LanguageString } from "../utils/types";
 
 
 function Welcome() {
   const navigate = useNavigate();
 
-  const { initDataUnsafe } = useTelegramData();
+  const { initDataUnsafe } = useTelegram();
 
   const { l } = useLanguage();
 
