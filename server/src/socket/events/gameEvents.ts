@@ -228,7 +228,7 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
           participants: true,
         },
       });
-      socket.emit("C2S_FETCH_BATTLE_LOYAL_GAMES", games);
+      socket.emit("S2C_FETCH_BATTLE_LOYAL_GAMES", games);
     } catch (error) {
       console.error("Failed to fetch games:", error);
       socket.emit("S2C_ERROR", {
