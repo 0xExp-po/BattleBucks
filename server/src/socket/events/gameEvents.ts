@@ -219,5 +219,21 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
     });
   });
 
-  
+  socket.on("C2S_FETCH_BATTLE_LOYAL_GAMES", async () => {
+    console.log("Fetching list of open games");
+    try {
+      const games = await prisma.game.findMany({
+        where: { status: GameStatus.OPEN },
+        include: {
+          participants: true,
+        },
+      });
+      socket.emit("C2S_FETCH_BATTLE_LOYAL_GAMES", games);
+    } catch (error) {
+      console.error("Failed to fetch games:", error);
+      socket.emit("S2C_ERROR", {
+        message: "Failed to fetch games. Please try again.",
+      });
+    }
+  });
 };
