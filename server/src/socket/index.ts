@@ -37,8 +37,8 @@ const setupSocket = (io: Server) => {
     friendEvents(socket, io);
 
     socket.on("disconnect", (reason) => {
-      userStatus[socket.id] = { ...userStatus[socket.id], status: "OFFLINE" };
-      console.log(userStatus[socket.id].userId, "goes offline...")
+      console.log(userStatus[socket.id], "goes offline...")
+      delete userStatus[socket.id];
     });
   });
 };
