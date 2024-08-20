@@ -10,6 +10,7 @@ import { timeout } from "../../utils/timeout";
 import { trpc } from "../../trpc/trpc";
 import { Game } from "../../utils/types";
 import "./VersusBuyin.scss";
+import Token from "../../components/Token/Token";
 
 enum State {
   Idle,
@@ -90,7 +91,7 @@ function VersusBuyin() {
   };
 
   return (
-    <div className="flexCol flex" style={{ margin: "1em" }}>
+    <div className="flexCol flex" style={{ padding: "1em" }}>
       <Logo />
       <h2>Choose buy-in!</h2>
       {game && <div style={{ height: "2em" }}>{game.id}</div>}
@@ -98,9 +99,9 @@ function VersusBuyin() {
         <Loader style={{ overflow: "hidden", fontWeight: "bold" }} label={state === State.Found ? "Match found!" : "Searching..."} />
       </motion.div>
       <motion.div className="flexCol center" style={{ margin: "1em 0", gap: "1em" }}>
-        <Button type="big" disabled={state !== State.Idle} style={{ width: "60%" }} onClick={() => startCustomLobby()}>$1</Button>
-        <Button type="big" disabled={state !== State.Idle} style={{ width: "60%" }} onClick={() => startNewFakeGame()}>$2</Button>
-        <Button type="big" disabled={state !== State.Idle} style={{ width: "60%" }} onClick={() => navigate("/versus")}>$5</Button>
+        <Button type="big" disabled={state !== State.Idle} style={{ width: "60%" }} onClick={() => startCustomLobby()}><Token fontSize="1.5em">1</Token></Button>
+        <Button type="big" disabled={state !== State.Idle} style={{ width: "60%" }} onClick={() => startNewFakeGame()}><Token fontSize="1.5em">2</Token></Button>
+        <Button type="big" disabled={state !== State.Idle} style={{ width: "60%" }} onClick={() => navigate("/versus")}><Token fontSize="1.5em">5</Token></Button>
       </motion.div>
       <Button type="cancel" disabled={state !== State.Idle} onClick={() => navigate(-1)}>Back</Button>
       <MatchFoundOverlay trigger={state === State.Found} duration={matchFoundTextDuration} />

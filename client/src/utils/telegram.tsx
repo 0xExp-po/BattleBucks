@@ -56,4 +56,15 @@ function useTelegram() {
   return useContext(TelegramContext);
 }
 
-export { useTelegram };
+function useTelegramColors(colors: { header: string }) {
+  const WebApp = window.Telegram.WebApp;
+  const [initialHeader] = useState(WebApp.headerColor);
+
+  useEffect(() => {
+    if (!WebApp) return;
+    WebApp.setHeaderColor(colors.header);
+    return () => WebApp.setHeaderColor(initialHeader);
+  }, []);
+}
+
+export { useTelegram, useTelegramColors };

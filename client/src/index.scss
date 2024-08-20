@@ -1,12 +1,4 @@
-$colorMain: #AB3130;
-$colorMain2: #FFD700;
-$colorMain3: #fff9cb;
-$colorFont: #FEE750;
-//$colorBigButton: $colorMain3;
-$colorBigButton: white;
-$colorBgLight: $colorMain;
-$colorBgDark: #1272d2;
-$colorFgDark: black;
+@import "./variables.module.scss";
 
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
@@ -28,8 +20,7 @@ body {
   width: 100%;
   height: 100vh;
   margin: 0;
-  background: $colorBgLight;
-  background: linear-gradient(193deg, $colorBgLight 0%, $colorBgDark 80%, $colorBgDark 100%);
+  background: $bodyBg;
 }
 
 #root {
@@ -124,6 +115,10 @@ button:focus-visible {
     3px -3px 0 #000;
 }
 
+.outline2 {
+  filter: drop-shadow(rgba(0, 0, 0, 0.2) 0px 0px 5px);
+}
+
 .pill {
   @extend .flexCol;
   @extend .center;
@@ -133,20 +128,9 @@ button:focus-visible {
   background-color: rgba(236, 224, 116, 0.427);
 }
 
-.divider {
-  border-left: 1px solid #AAAAAA;
-  height: 100%;
-  width: 0;
-}
-
-.table {
-  width: 8em;
-  height: 8em;
-  border-radius: 10px;
-  border: 5px solid rgb(51, 92, 215);
-  background-color: rgb(15, 38, 107);
-  background: radial-gradient(circle, rgb(15, 38, 107) 0%, rgb(14, 34, 95) 50%);
-  margin: 0.5em;
+@font-face {
+  font-family: "Bangers";
+  src: url("/fonts/Bangers-Regular.ttf") format("truetype");
 }
 
 .win {
@@ -159,9 +143,4 @@ button:focus-visible {
 
 .draw {
   background: radial-gradient(circle at left, rgba(143, 157, 17, 0.5) 0%, rgba(143, 157, 17, 0.5) 20%, rgba(74, 0, 255, 0) 100%);
-}
-
-@font-face {
-  font-family: "Bangers";
-  src: url("assets/Bangers-Regular.ttf") format("truetype");
 }

@@ -1,12 +1,12 @@
-import React, { useState } from "react";
-import Welcome from "./views/Welcome";
+import React from "react";
+import Welcome from "./views/Welcome/Welcome";
 import Profile from "./views/Profile";
 import Versus from "./views/Versus/Versus";
 import MatchHistory from "./views/MatchHistory";
 import VersusLobby from "./views/VersusLobby";
 import VersusBuyin from "./views/VersusBuyin/VersusBuyin";
 import GameEnd from "./views/GameEnd";
-import ViewTransition from "./components/ViewTransition";
+import ViewTransition from "./components/ViewTransition/ViewTransition";
 import BRGameList from "./views/BRGameList/BRGameList";
 import BRCreate from "./views/BRCreate/BRCreate";
 import BRLobby from "./views/BRLobby/BRLobby";
@@ -69,13 +69,11 @@ function App() {
   const telegram = useTelegram();
   const token = telegram.initData?.token;
 
-  if (!token) {
-    return <div></div>;
-  }
+  if (!token) return <div></div>;
 
   return (
     <SocketProvider token={token}>
-      <div className="flexCol flex" style={{ overflowX: "hidden" }}>
+      <div className="flexCol flex" style={{ overflow: "hidden" }}>
         <AnimatePresence mode="wait" initial={false}>
           {React.cloneElement(element, { key: location.pathname })}
         </AnimatePresence>

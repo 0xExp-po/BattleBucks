@@ -34,7 +34,7 @@ function VersusLobby() {
   };
 
   return (
-    <div className="flexCol flex" style={{ margin: "5em 1em" }}>
+    <div className="flexCol flex" style={{ padding: "5em 1em" }}>
       <Logo />
       <div className="flexCol" style={{ margin: "2em 0", gap: "1em" }}>
         <div className="flexRow" style={{ gap: "1em" }}>

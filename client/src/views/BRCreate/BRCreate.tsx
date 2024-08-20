@@ -1,8 +1,9 @@
 import { useState } from "react";
+import { useNavigate } from "react-router";
 import Chooser from "../../components/Chooser/Chooser";
 import Button from "../../components/Button/Button";
 import Logo from "../../components/Logo/Logo";
-import { useNavigate } from "react-router";
+import "./BRCreate.scss";
 
 function BRCreate() {
   const [buyin, setBuyin] = useState<number>();
@@ -14,7 +15,7 @@ function BRCreate() {
   };
 
   return (
-    <div className="flexCol flex" style={{ margin: "1em", gap: "1em" }}>
+    <div className="brCreate flexCol flex">
       <Logo />
       <h2>Create Game</h2>
       <Chooser label="Buyin:" options={[undefined, 1, 2, 5]} onChange={e => setBuyin(e as number | undefined)} />

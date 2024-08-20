@@ -1,0 +1,21 @@
+@import "../../index.scss";
+
+.brGameList {
+    @extend .flexCol;
+    @extend .flex;
+
+    background-color: $brLobbiesBg;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.brGameListHeader {
+    @extend .flexCol;
+
+    justify-content: stretch;
+    padding: 1em 0;
+    background-color: $brLobbyHeaderBg;
+    color: $brLobbyHeaderFg;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+}

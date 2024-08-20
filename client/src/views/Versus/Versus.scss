@@ -84,3 +84,19 @@ $color-scissors: rgb(116, 161, 220);
 .scissors:hover {
   filter: drop-shadow(0 0 1em $color-scissors);
 }
+
+.divider {
+  border-left: 1px solid #AAAAAA;
+  height: 100%;
+  width: 0;
+}
+
+.table {
+  width: 8em;
+  height: 8em;
+  border-radius: 10px;
+  border: 5px solid rgb(51, 92, 215);
+  background-color: rgb(15, 38, 107);
+  background: radial-gradient(circle, rgb(15, 38, 107) 0%, rgb(14, 34, 95) 50%);
+  margin: 0.5em;
+}

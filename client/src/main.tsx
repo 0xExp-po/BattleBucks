@@ -4,7 +4,6 @@ import { BrowserRouter } from 'react-router-dom';
 import { TRPCProvider } from './trpc/index.tsx'
 import { TelegramProvider } from "./utils/telegram.tsx";
 import { LanguageProvider } from "./utils/localization.tsx";
-import "./index.scss";
 
 window.Telegram.WebApp.ready();
 
