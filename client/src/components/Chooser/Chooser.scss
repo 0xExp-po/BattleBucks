@@ -1,9 +1,15 @@
 @import "../../index.scss";
 
 .chooserOption {
-    height: fit-content;
+    @extend .flexRow;
+    @extend .center;
+
+    min-height: fit-content;
+    text-align: center;
     border: 0;
-    border-radius: 10px;
+    border-radius: 8px;
+    border: 2px solid $colorMain;
     padding: 0.5em;
     min-width: 4em;
+    appearance: none;
 }

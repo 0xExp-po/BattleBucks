@@ -1,11 +1,11 @@
 import { useNavigate } from "react-router";
 import { useContext, useRef } from "react";
 import { trpc } from "../trpc/trpc";
+import { useTelegram } from "../utils/telegram";
+import { timeout } from "../utils/timeout";
 import Button from "../components/Button/Button";
 import Logo from "../components/Logo/Logo";
-import useTelegramData from "../hooks/useTelegramData";
 import SocketContext from "../utils/socket";
-import { timeout } from "../utils/timeout";
 
 function VersusLobby() {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -13,7 +13,7 @@ function VersusLobby() {
   const navigate = useNavigate();
 
   const mutation = trpc.game.joinGame.useMutation();
-  const telegramData = useTelegramData();
+  const telegramData = useTelegram();
 
   const joinGame = () => {
     if (!inputRef.current?.value) {
@@ -34,7 +34,7 @@ function VersusLobby() {
   };
 
   return (
-    <div className="flexCol flex" style={{ margin: "5em 1em" }}>
+    <div className="flexCol flex" style={{ padding: "5em 1em" }}>
       <Logo />
       <div className="flexCol" style={{ margin: "2em 0", gap: "1em" }}>
         <div className="flexRow" style={{ gap: "1em" }}>

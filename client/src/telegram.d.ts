@@ -18,7 +18,7 @@ declare namespace Telegram {
   }
 
   interface InitDataUnsafe {
-    user?: User;
+    user: User;
     query_id?: string;
     auth_date?: number;
     hash?: string;
