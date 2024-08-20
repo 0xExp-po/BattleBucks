@@ -1,6 +1,6 @@
-import Rock from "../../assets/rock2.png";
-import Paper from "../../assets/paper2.png";
-import Scissors from "../../assets/scissors2.png";
+//import Rock from "../../assets/rock2.png";
+//import Paper from "../../assets/paper2.png";
+//import Scissors from "../../assets/scissors2.png";
 import Button from "../../components/Button/Button";
 import Avatar from "../../components/Avatar";
 import { AnimationControls, AnimationDefinition, motion, useAnimationControls } from "framer-motion";
@@ -11,41 +11,65 @@ import "./Versus.scss"
 
 type Item = "rock" | "paper" | "scissors";
 
-const images = {
-  "rock": Rock,
-  "paper": Paper,
-  "scissors": Scissors,
+//const images = {
+//  rock: Rock,
+//  paper: Paper,
+//  scissors: Scissors,
+//};
+
+const emojis = {
+  rock: "🪨",
+  paper: "📝",
+  scissors: "✂️",
 };
 
-const transformIdleBase = "translateY(11em) ";
-const transformSelected = "translateY(1em) scale(1.5)";
-const transformSelectedFinal = "translateY(1em) scale(1.2)";
-const transformSelectedLeft = "translateY(1em) translateX(-5em) scale(1.2)";
-const transformSelectedRight = "translateY(1em) translateX(5em) scale(1.2)";
+const idleStyles = {
+  rock: { translateY: "30vh", translateX: "-20vh", fontSize: "1em", transition: { duration: 0.2, ease: "easeOut" } },
+  paper: { translateY: "30vh", translateX: "0", fontSize: "1em", transition: { duration: 0.2, ease: "easeOut" } },
+  scissors: { translateY: "30vh", translateX: "20vh", fontSize: "1em", transition: { duration: 0.2, ease: "easeOut" } },
+};
 
-const initialOpponentPosition: AnimationDefinition = {
-  opacity: 0,
-  translateY: "-5em",
+const styleItemSelected: AnimationDefinition = {
+  translateX: "0em",
+  translateY: "0vh",
+  fontSize: "2em",
+  transition: { duration: 0.2, ease: "easeOut" },
+};
+
+const styleSelectedFinal: AnimationDefinition = {
+  translateX: "0em",
+  translateY: "0vh",
+  fontSize: "1.5em",
+  transition: { duration: 0.2, ease: "easeOut" },
+};
+
+const styleMoveLeft: AnimationDefinition = {
+  translateX: "-5em",
+  translateY: "0vh",
+  fontSize: "1.5em",
   transition: { duration: 0.3, ease: "easeOut" },
 };
 
-const finalOpponentPosition: AnimationDefinition = {
+const styleOpponentInitial: AnimationDefinition = {
+  opacity: 0,
+  translateX: "5em",
+  translateY: "-10vh",
+  transition: { duration: 0.3, ease: "easeOut" },
+  fontSize: "1.5em",
+};
+
+const styleOpponentVisible: AnimationDefinition = {
   opacity: 1,
   translateY: 0,
   transition: { duration: 0.3, ease: "easeOut" },
 };
 
-const bumpLeft: AnimationDefinition = {
-  translateX: "-5em",
-  scale: 1.2,
+const styleWinner: AnimationDefinition = {
+  translateX: "0em",
+  translateY: "0vh",
+  fontSize: "2em",
   transition: { duration: 0.3, ease: "easeOut", delay: 2 },
-}
-
-const bumpRight: AnimationDefinition = {
-  translateX: "5em",
-  scale: 1.2,
-  transition: { duration: 0.3, ease: "easeOut", delay: 2 },
-}
+};
 
 const hide: AnimationDefinition = {
   opacity: 0,
@@ -58,12 +82,6 @@ enum GameState {
   CHOSEN,
   BATTLE,
 };
-
-const transforms = {
-  [GameState.IDLE]: transformSelected,
-  [GameState.CHOSEN]: transformSelectedFinal,
-  [GameState.BATTLE]: transformSelectedLeft,
-}
 
 // >0 - 1 winner, <0 - 2 winner, =0 - draw
 function determineResult(choice1: Item, choice2: Item) {
@@ -97,6 +115,7 @@ function Versus() {
   async function onChoose() {
     if (!selectedItem)
       return;
+    controls[selectedItem].start(styleSelectedFinal);
     setState(GameState.CHOSEN);
     await timeout(2378);
     commenceBattle();
@@ -112,18 +131,19 @@ function Versus() {
 
     setOtherItem(otherItem);
     setState(GameState.BATTLE);
-    const opponentDownAnimation = controlsOpponent.start(finalOpponentPosition);
+    controls[selectedItem].start(styleMoveLeft);
+    const opponentDownAnimation = controlsOpponent.start(styleOpponentVisible);
 
     const result = determineResult(selectedItem, otherItem);
 
     if (result > 0) {
       opponentDownAnimation.then(() => {
-        controls[selectedItem].start(bumpRight);
+        controls[selectedItem].start(styleWinner);
         controlsOpponent.start(hide);
       });
     } else if (result < 0) {
       opponentDownAnimation.then(() => {
-        controlsOpponent.start(bumpLeft);
+        controlsOpponent.start(styleWinner);
         controls[selectedItem].start(hide);
       });
     }
@@ -142,14 +162,24 @@ function Versus() {
     controls[selectedItem].start({ translateY: 0, translateX: 0, opacity: 1, scale: 1 });
     controlsOpponent.stop()
     controlsOpponent.start({ translateX: 0, scale: 1 }).then(() => {
-      controlsOpponent.start(initialOpponentPosition);
+      controlsOpponent.start(styleOpponentInitial);
     });
     setState(GameState.IDLE);
     setSelectedItem(undefined);
   }
 
+  const onItemClicked = (item: Item) => {
+    if (isChosen) return;
+    setSelectedItem(item);
+    console.log(item);
+
+    controlsR.start(item === "rock" ? styleItemSelected : idleStyles["rock"]);
+    controlsP.start(item === "paper" ? styleItemSelected : idleStyles["paper"]);
+    controlsS.start(item === "scissors" ? styleItemSelected : idleStyles["scissors"]);
+  }
+
   return (
-    <div className="flexCol flex" style={{ margin: "1em" }}>
+    <div className="flexCol flex" style={{ margin: "1em", overflowX: "hidden" }}>
       <div className="flexRow center" style={{ gap: "0.25em", marginBottom: "2em" }}>
         <div className="flex flexCol center">
           <h3 style={{ color: "rgb(229, 243, 255)" }}>Player1</h3>
@@ -166,10 +196,10 @@ function Versus() {
         <div className="table"></div>
       </div>
       <div className="items">
-        <Item controls={controlsR} transform={selectedItem === "rock" ? transforms[state] : transformIdleBase + " translateX(-110%)"} type="rock" onClick={() => !isChosen && setSelectedItem("rock")} />
-        <Item controls={controlsP} transform={selectedItem === "paper" ? transforms[state] : transformIdleBase + " translateX(0%)"} type="paper" onClick={() => !isChosen && setSelectedItem("paper")} />
-        <Item controls={controlsS} transform={selectedItem === "scissors" ? transforms[state] : transformIdleBase + " translateX(110%)"} type="scissors" onClick={() => !isChosen && setSelectedItem("scissors")} />
-        <Item controls={controlsOpponent} initialStyle={initialOpponentPosition} transform={transformSelectedRight} type={otherItem ?? "rock"} />
+        <Item controls={controlsR} initialStyle={idleStyles["rock"]} type="rock" onClick={() => onItemClicked("rock")} />
+        <Item controls={controlsP} initialStyle={idleStyles["paper"]} type="paper" onClick={() => onItemClicked("paper")} />
+        <Item controls={controlsS} initialStyle={idleStyles["scissors"]} type="scissors" onClick={() => onItemClicked("scissors")} />
+        <Item controls={controlsOpponent} initialStyle={styleOpponentInitial} type={otherItem ?? "rock"} />
       </div>
 
       <div className="flexRow flex center" style={{ justifyContent: "flex-end" }}>
@@ -185,7 +215,6 @@ function Versus() {
 interface ItemProps {
   type: Item;
   onClick?: React.MouseEventHandler<HTMLDivElement>;
-  transform: string;
   controls: AnimationControls;
   initialStyle?: CSSProperties | AnimationDefinition;
 }
@@ -193,8 +222,9 @@ interface ItemProps {
 function Item(props: ItemProps) {
   return (
     <motion.div animate={props.controls} style={props.initialStyle as CSSProperties} className="flex center absolute">
-      <div onClick={props.onClick} className={`${props.onClick ? "itemClickable" : ""} item ${props.type}`} style={{ transform: props.transform }}>
-        <img src={images[props.type]} className="rps" alt={props.type} />
+      <div onClick={props.onClick} className={`${props.onClick ? "itemClickable" : ""} item ${props.type}`} style={{ userSelect: "none" }}>
+        {/* <img src={images[props.type]} className="rps" alt={props.type} /> */}
+        <div style={{ fontSize: "2em" }}>{emojis[props.type]}</div>
         <div style={{ textTransform: "uppercase" }}>{props.type}</div>
       </div>
     </motion.div>

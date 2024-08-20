@@ -4,6 +4,7 @@
   @extend .flex;
   @extend .center;
   @extend .absoluteCenter;
+
   position: absolute;
   overflow: hidden;
 }
@@ -11,12 +12,11 @@
 .item {
   @extend .flexCol;
   @extend .center;
+
   position: absolute;
   width: 5em;
   height: 6em;
-  background-color: white;
-  border-radius: 10px;
-  border: 5px solid grey;
+  font-size: 1.2em;
   will-change: transform, filter;
   transition: transform 300ms, filter 200ms;
   font-weight: bold;
@@ -62,7 +62,7 @@ $color-paper: rgb(215, 203, 99);
 $color-scissors: rgb(116, 161, 220);
 
 .rock {
-  background-color: $color-rock;
+  //background-color: $color-rock;
 }
 
 .rock:hover {
@@ -70,7 +70,7 @@ $color-scissors: rgb(116, 161, 220);
 }
 
 .paper {
-  background-color: $color-paper;
+  //background-color: $color-paper;
 }
 
 .paper:hover {
@@ -78,7 +78,7 @@ $color-scissors: rgb(116, 161, 220);
 }
 
 .scissors {
-  background-color: $color-scissors;
+  //background-color: $color-scissors;
 }
 
 .scissors:hover {
