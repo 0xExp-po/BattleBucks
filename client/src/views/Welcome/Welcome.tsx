@@ -3,8 +3,7 @@ import Logo from "../../components/Logo/Logo";
 import LanguageBubble from "../../components/LanguageBubble/LanguageBubble";
 import { useTelegram } from "../../utils/telegram";
 import { useNavigate } from "react-router";
-import { useLanguage } from "../../utils/localization";
-import { LanguageString } from "../../utils/types";
+import { LanguageString, useLanguage } from "../../utils/localization";
 import "./Welcome.scss";
 
 function Welcome() {

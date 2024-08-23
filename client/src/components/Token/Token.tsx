@@ -3,7 +3,7 @@ import Ton from "../../assets/ton.webp";
 interface TokenProps {
   children: number | string;
   fontSize?: string;
-  innerRef: React.RefObject<HTMLElement>;
+  innerRef?: React.RefObject<HTMLElement>;
 }
 
 function Token(props: TokenProps) {

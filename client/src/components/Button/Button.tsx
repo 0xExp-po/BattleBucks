@@ -1,5 +1,5 @@
 import { CSSProperties } from "react";
-import { Children } from "../../utils/types";
+import { Children } from "../../types";
 import ComingSoon from "../../assets/coming_soon2.png";
 import "./Button.scss";
 

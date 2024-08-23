@@ -1,5 +1,8 @@
 import { createContext, useContext, useState } from "react";
-import { Language, LanguageString } from "../utils/types";
+
+export enum LanguageString {
+  welcomeBack = "welcomeBack",
+};
 
 export const LANGUAGE_ENGLISH: Language = {
   NAME: "eng",

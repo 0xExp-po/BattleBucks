@@ -23,6 +23,8 @@ function Chooser(props: ChooserProps) {
 
   const onChange = (_: MouseEvent<HTMLSelectElement>) => {
     let newVal = value;
+
+    console.log("portn", newVal);
     do {
       let index = options.indexOf(newVal);
       newVal = options[(index + 1) % options.length];

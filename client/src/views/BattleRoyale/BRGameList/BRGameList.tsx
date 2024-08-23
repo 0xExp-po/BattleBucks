@@ -1,94 +1,61 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { timeout } from "../../utils/timeout";
 import { useNavigate } from "react-router";
-import Chooser from "../../components/Chooser/Chooser";
-import Pill from "../../components/Pill";
-import Loader from "../../components/Loader/Loader";
-import Button from "../../components/Button/Button";
-import Back from "../../components/Back/Back";
-import Token from "../../components/Token/Token";
-import vars from "../../variables.module.scss";
+import { useTelegramColors } from "../../../utils/telegram";
+import Chooser from "../../../components/Chooser/Chooser";
+import Pill from "../../../components/Pill";
+import Loader from "../../../components/Loader/Loader";
+import Button from "../../../components/Button/Button";
+import Back from "../../../components/Back/Back";
+import Token from "../../../components/Token/Token";
+import SocketContext from "../../../utils/socket";
 import "./BRGameList.scss";
-import { useTelegramColors } from "../../utils/telegram";
 
-interface Game {
-  currentPlayers: number;
-  maxPlayers: number;
-  buyin: number;
+interface BRGameListProps {
+  onGameJoin: (game: Game) => void;
 }
 
-const initGames = [
-  {
-    currentPlayers: 5,
-    maxPlayers: 32,
-    buyin: 5,
-  },
-  {
-    currentPlayers: 12,
-    maxPlayers: 64,
-    buyin: 2,
-  },
-  {
-    currentPlayers: 8,
-    maxPlayers: 16,
-    buyin: 10,
-  },
-  {
-    currentPlayers: 7,
-    maxPlayers: 8,
-    buyin: 2,
-  },
-  {
-    currentPlayers: 2,
-    maxPlayers: 16,
-    buyin: 1,
-  },
-  {
-    currentPlayers: 24,
-    maxPlayers: 32,
-    buyin: 5,
-  },
-  {
-    currentPlayers: 33,
-    maxPlayers: 64,
-    buyin: 2,
-  }
-];
-
-function BRGameList() {
+function BRGameList(props: BRGameListProps) {
   const [loading, setLoading] = useState(false);
   const [allGames, setAllGames] = useState<Game[]>([]);
   const [buyin, setBuyin] = useState<number>();
   const [maxPlayers, setMaxPlayers] = useState<number>();
-  useTelegramColors({ header: "#fff9cb"});
+  const socket = useContext(SocketContext);
+
+  useTelegramColors({ header: "#fff9cb" });
   const navigate = useNavigate();
 
+  // games fetch
   useEffect(() => {
-    console.log(vars);
-  }, []);
+    socket.on("S2C_FETCH_BATTLE_LOYAL_GAMES", (res) => {
+      console.log(res);
+      setAllGames(res);
+      setLoading(false);
+    });
 
-  useEffect(() => {
     const refetch = async () => {
       setLoading(true);
-      await timeout(1000);
-      setAllGames(initGames);
-      setLoading(false);
+      socket.emit("C2S_FETCH_BATTLE_LOYAL_GAMES");
     }
-    const interval = setInterval(refetch, 2000);
+
+    const interval = setInterval(refetch, 3000);
     refetch();
-    return () => clearInterval(interval);
+
+    return () => {
+      clearInterval(interval);
+      socket.off("S2C_FETCH_BATTLE_LOYAL_GAMES");
+    }
   }, []);
 
+  // join game
   const joinGame = (game: Game) => {
-    console.log("joined game", game);
-    navigate("/br/lobby");
+    props.onGameJoin(game);
   };
 
   let games = allGames;
-  if (buyin) games = games.filter(game => game.buyin === buyin);
+  if (buyin) games = games.filter(game => game.buyIn === buyin);
   if (maxPlayers) games = games.filter(game => game.maxPlayers === maxPlayers);
-  games = games.sort((g1, g2) => g1.currentPlayers / g1.maxPlayers - g2.currentPlayers / g2.maxPlayers);
+  games = games.sort((g1, g2) => g1.participants.length / g1.maxPlayers - g2.participants.length / g2.maxPlayers);
 
   return (
     <div className="brGameList">
@@ -118,8 +85,8 @@ function BRGameList() {
                   <div>Winner Only</div>
                 </div>
                 <div className="flexRow flex" style={{ justifyContent: "space-between" }}>
-                  <div><b>{game.currentPlayers}</b> / <b>{game.maxPlayers}</b></div>
-                  <div><Token>{game.buyin}</Token></div>
+                  <div><b>{game.participants.length}</b> / <b>{game.maxPlayers}</b></div>
+                  <div><Token>{game.buyIn}</Token></div>
                 </div>
               </Pill>
             </button>
