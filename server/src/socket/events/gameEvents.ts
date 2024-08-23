@@ -26,6 +26,13 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
             status: GameStatus.OPEN,
           },
         });
+        // Automatically add the creator to the game
+        await prisma.gameParticipant.create({
+          data: {
+            gameId: game.id,
+            playerId: socket.user.userId,
+          },
+        });
         io.emit("S2C_GAME_CREATED", { gameId: game.id });
       } catch (error) {
         console.error(`Failed to create game:`, error);
@@ -217,6 +224,31 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
       gameId: data.gameId,
       state: data.state,
     });
+  });
+
+  // Handle user leaving a game
+  socket.on("C2S_LEAVE_GAME", async (data: { gameId: string }) => {
+    console.log(`Player ${socket.user.userId} leaving game ${data.gameId}`);
+    try {
+      // Remove the player from the game participants
+      await prisma.gameParticipant.delete({
+        where: {
+          gameId_playerId: {
+            gameId: data.gameId,
+            playerId: socket.user.userId,
+          },
+        },
+      });
+      socket.leave(data.gameId);
+      io.to(data.gameId).emit("S2C_PLAYER_LEFT", {
+        playerId: socket.user.userId,
+      });
+    } catch (error) {
+      console.error(`Failed to leave game:`, error);
+      socket.emit("S2C_ERROR", {
+        message: "Failed to leave the game. Please try again.",
+      });
+    }
   });
 
   socket.on("C2S_FETCH_BATTLE_LOYAL_GAMES", async () => {
