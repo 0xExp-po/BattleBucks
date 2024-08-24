@@ -32,7 +32,7 @@ model Friend {
   id        Int      @id @default(autoincrement())
   userId    String
   friendId  String
-  status    String // pending, accepted, rejected
+  status    FriendStatus
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -48,7 +48,7 @@ model Notification {
   id        Int      @id @default(autoincrement())
   userId    String
   message   String
-  type      String // game invite, friend request
+  type      NotificationType
   isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -142,4 +142,9 @@ enum MoveType {
   ROCK
   PAPER
   SCISSORS
+}
+
+enum NotificationType {
+  GAME_INVITE
+  FRIEND_REQUEST
 }
