@@ -11,7 +11,7 @@ function Loader(props: LoaderProps) {
   return (
     <div className="flexRow center" style={props.style}>
       <img src={LoaderImg} className="loaderImg" alt="loader" />
-      {props.label && <div>{props.label}</div>}
+      {props.label && <b>{props.label}</b>}
     </div>
   );
 }

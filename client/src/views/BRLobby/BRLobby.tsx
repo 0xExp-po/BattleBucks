@@ -5,6 +5,7 @@ import Loader from "../../components/Loader/Loader";
 import Logo from "../../components/Logo/Logo";
 import Button from "../../components/Button/Button";
 import MatchFoundOverlay from "../../components/MatchFoundOverlay/MatchFoundOverlay";
+import "./BRLobby.scss";
 
 function BRLobby() {
   const [currentPlayers, setCurrentPlayers] = useState(15);
@@ -28,7 +29,7 @@ function BRLobby() {
   }, []);
 
   return (
-    <div className="flexCol flex center" style={{ margin: "1em", gap: "1em" }}>
+    <div className="brLobby flexCol flex center">
       <Logo />
       <Loader label="Waiting for game..." />
       <h3>

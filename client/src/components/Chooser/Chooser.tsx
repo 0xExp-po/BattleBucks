@@ -7,6 +7,7 @@ type Combined = { value: ValidTypes, label?: string };
 interface ChooserProps {
   name?: string;
   label?: string;
+  labelPosition?: "left" | "top";
   options: Combined[] | ValidTypes[];
   default?: ValidTypes;
   onChange?: (value: ValidTypes) => void;
@@ -32,8 +33,8 @@ function Chooser(props: ChooserProps) {
   }
 
   return (
-    <div className="flexRow" style={{ gap: "0.5em" }}>
-      <label htmlFor={props.name}>{props.label}</label>
+    <div className={(props.labelPosition === "top" ? "flexCol" : "flexRow") + " center"} style={{ gap: "0.5em" }}>
+      <label className="flexRow center" htmlFor={props.name}>{props.label}</label>
       <select name={props.name} defaultValue={value} value={value} onClick={onChange} onMouseDown={e => e.preventDefault()} className="chooserOption">
         {props.options.map(option => {
           const value = typeof option === "object" ? option.value : option;
