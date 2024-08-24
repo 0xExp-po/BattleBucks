@@ -2,11 +2,12 @@ import { z } from "zod";
 import { privateProcedure } from "../middlewares";
 import { commonResponse } from "../../interfaces/MessageResponse";
 import { prisma } from "../../prisma";
+import { NotificationType } from "@prisma/client";
 
 const sendNotificationSchema = z.object({
   recipientId: z.string(),
   message: z.string(),
-  type: z.enum(["GAME_INVITE", "FRIEND_REQUEST", "SYSTEM"]),
+  type: z.nativeEnum(NotificationType),
 });
 
 export const sendNotification = privateProcedure

@@ -1,5 +1,6 @@
 import { Server, Socket } from "socket.io";
 import { prisma } from "../../prisma";
+import { NotificationType } from "@prisma/client";
 
 export const friendEvents = (socket: Socket, io: Server) => {
   // Send friend request notification
@@ -19,7 +20,7 @@ export const friendEvents = (socket: Socket, io: Server) => {
         data: {
           userId: data.receiverId,
           message: "You have a new friend request",
-          type: "friend request",
+          type: NotificationType.FRIEND_REQUEST,
         },
       });
 
@@ -49,7 +50,7 @@ export const friendEvents = (socket: Socket, io: Server) => {
         data: {
           userId: data.requesterId,
           message: "Your friend request has been accepted",
-          type: "friend request",
+          type: NotificationType.FRIEND_REQUEST,
         },
       });
 
