@@ -2,6 +2,7 @@ import { z } from "zod";
 import { privateProcedure } from "../middlewares";
 import { commonResponse } from "../../interfaces/MessageResponse";
 import { prisma } from "../../prisma";
+import { FriendStatus } from "@prisma/client";
 
 const FriendRequestSchema = z.object({
   friendId: z.string(),
@@ -25,7 +26,7 @@ export const sendFriendRequest = privateProcedure
         data: {
           userId: ctx.user.id,
           friendId: input.friendId,
-          status: "pending",
+          status: FriendStatus.PENDING,
         },
       });
       return {
@@ -46,8 +47,8 @@ export const acceptFriendRequest = privateProcedure
   .mutation(async ({ input, ctx }): Promise<any> => {
     try {
       const friend = await prisma.friend.update({
-        where: { id: input.requestId, friendId: ctx.user.id, status: "pending" },
-        data: { status: "accepted" },
+        where: { id: input.requestId, friendId: ctx.user.id, status: FriendStatus.PENDING },
+        data: { status: FriendStatus.ACCEPTED },
       });
       return {
         status: 200,
@@ -67,8 +68,8 @@ export const rejectFriendRequest = privateProcedure
   .mutation(async ({ input, ctx }): Promise<any> => {
     try {
       const friend = await prisma.friend.update({
-        where: { id: input.requestId, friendId: ctx.user.id, status: "pending" },
-        data: { status: "rejected" },
+        where: { id: input.requestId, friendId: ctx.user.id, status: FriendStatus.PENDING },
+        data: { status: FriendStatus.REJECTED },
       });
       return {
         status: 200,
@@ -90,8 +91,8 @@ export const getFriendsList = privateProcedure
       const friends = await prisma.friend.findMany({
         where: { 
           OR: [
-            { userId: ctx.user.id, status: "accepted" },
-            { friendId: ctx.user.id, status: "accepted" }
+            { userId: ctx.user.id, status: FriendStatus.ACCEPTED },
+            { friendId: ctx.user.id, status: FriendStatus.ACCEPTED }
           ]
         },
         include: {
@@ -105,8 +106,8 @@ export const getFriendsList = privateProcedure
       const total = await prisma.friend.count({
         where: { 
           OR: [
-            { userId: ctx.user.id, status: "accepted" },
-            { friendId: ctx.user.id, status: "accepted" }
+            { userId: ctx.user.id, status: FriendStatus.ACCEPTED },
+            { friendId: ctx.user.id, status: FriendStatus.ACCEPTED }
           ]
         },
       });
@@ -114,7 +115,7 @@ export const getFriendsList = privateProcedure
       return {
         status: 200,
         result: { 
-          friends: friends.map(f => f.userId === ctx.user.id ? f.friend : f.user),
+          friends: friends.map(f => f.userId === ctx.user.id ? f.friendId : f.userId),
           total 
         },
       };
