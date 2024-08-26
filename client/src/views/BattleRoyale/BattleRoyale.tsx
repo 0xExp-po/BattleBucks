@@ -2,7 +2,7 @@ import { useNavigate, useRoutes } from "react-router";
 import { AnimatePresence } from "framer-motion";
 import { io } from "socket.io-client";
 import { useTelegram } from "../../utils/telegram";
-import React, { useContext } from "react";
+import React, { useContext, useState } from "react";
 import SocketContext, { SocketBaseUrl } from "../../utils/socket";
 import ViewTransition from "../../components/ViewTransition/ViewTransition";
 import BRCreate from "./BRCreate/BRCreate";
@@ -14,6 +14,8 @@ function BattleRoyale() {
   const socket = useContext(SocketContext);
   const telegram = useTelegram();
   const navigate = useNavigate();
+
+  const [currentOpponent, setCurrentOpponent] = useState("BROpponent");
 
   // game join
   const onGameJoin = (game: Game) => {
@@ -34,7 +36,7 @@ function BattleRoyale() {
         return
 
       console.info("confirmed", game.id);
-      navigate("/game", { state: { game: game}});
+      navigate("/game", { state: { game: game } });
     });
     ns.on("S2C_GAME_STARTED", r => console.log("dsdfs", r));
 
