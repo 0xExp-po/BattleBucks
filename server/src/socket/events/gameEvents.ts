@@ -17,6 +17,18 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
     }) => {
       console.log(`Creating game with data:`, data);
       try {
+        if (!data.maxPlayers || data.maxPlayers <= 0) {
+          socket.emit("S2C_ERROR", {
+            message: "Invalid max players. Please enter a positive number.",
+          });
+          return;
+        }
+        if (!data.gameType) {
+          socket.emit("S2C_ERROR", {
+            message: "Game type is required.",
+          });
+          return;
+        }
         const game = await prisma.game.create({
           data: {
             buyIn: data.buyIn,
@@ -24,6 +36,13 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
             eliminatedPlayersCnt: 0,
             gameType: data.gameType,
             status: GameStatus.OPEN,
+          },
+        });
+        // Automatically add the creator to the game
+        await prisma.gameParticipant.create({
+          data: {
+            gameId: game.id,
+            playerId: socket.user.userId,
           },
         });
         io.emit("S2C_GAME_CREATED", { gameId: game.id });
@@ -40,6 +59,12 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
   socket.on("C2S_JOIN_GAME", async (data: { gameId: string }) => {
     console.log(`Player ${socket.user.userId} joining game ${data.gameId}`);
     try {
+      if (!data.gameId) {
+        socket.emit("S2C_ERROR", {
+          message: "Game ID is required.",
+        });
+        return;
+      }
       const gameParticipant = await prisma.gameParticipant.create({
         data: {
           gameId: data.gameId,
@@ -63,21 +88,25 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
   socket.on("C2S_START_GAME", async (gameId: string) => {
     console.log(`Game ${gameId} started`);
     try {
+      if (!gameId) {
+        socket.emit("S2C_ERROR", {
+          message: "Game ID is required.",
+        });
+        return;
+      }
       await prisma.game.update({
         where: { id: gameId },
         data: { status: GameStatus.IN_PROGRESS },
+      });
+      io.to(gameId).emit("S2C_GAME_STARTED", {
+        gameId: gameId,
       });
     } catch (error) {
       console.error(`Failed to update game status for game ${gameId}:`, error);
       socket.emit("S2C_ERROR", {
         message: "Failed to start the game. Please try again.",
       });
-      return;
     }
-
-    io.to(gameId).emit("S2C_GAME_STARTED", {
-      gameId: gameId,
-    });
   });
 
   // Handle move submission in a game
@@ -88,6 +117,12 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
         `Player ${socket.user.userId} submitted move in game ${data.gameId}`
       );
       try {
+        if (!data.gameId || !data.move || data.round < 0) {
+          socket.emit("S2C_ERROR", {
+            message: "Invalid game ID, move, or round.",
+          });
+          return;
+        }
         // Log the move in the database
         await prisma.gameLog.create({
           data: {
@@ -116,10 +151,10 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
           });
 
           if (gameLogs.length < game.maxPlayers - game.eliminatedPlayersCnt) {
-            return {
-              status: 200,
-              result: { success: false, winner: null },
-            };
+            socket.emit("S2C_ERROR", {
+              message: "Not all players have submitted their moves.",
+            });
+            return;
           }
 
           // Determine the remaining and eliminated players
@@ -217,6 +252,37 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
       gameId: data.gameId,
       state: data.state,
     });
+  });
+
+  // Handle user leaving a game
+  socket.on("C2S_LEAVE_GAME", async (data: { gameId: string }) => {
+    console.log(`Player ${socket.user.userId} leaving game ${data.gameId}`);
+    try {
+      if (!data.gameId) {
+        socket.emit("S2C_ERROR", {
+          message: "Game ID is required.",
+        });
+        return;
+      }
+      // Remove the player from the game participants
+      await prisma.gameParticipant.delete({
+        where: {
+          gameId_playerId: {
+            gameId: data.gameId,
+            playerId: socket.user.userId,
+          },
+        },
+      });
+      socket.leave(data.gameId);
+      io.to(data.gameId).emit("S2C_PLAYER_LEFT", {
+        playerId: socket.user.userId,
+      });
+    } catch (error) {
+      console.error(`Failed to leave game:`, error);
+      socket.emit("S2C_ERROR", {
+        message: "Failed to leave the game. Please try again.",
+      });
+    }
   });
 
   socket.on("C2S_FETCH_BATTLE_LOYAL_GAMES", async () => {
