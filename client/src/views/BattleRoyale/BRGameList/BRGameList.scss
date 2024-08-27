@@ -19,3 +19,20 @@
     border-bottom-left-radius: 10px;
     border-bottom-right-radius: 10px;
 }
+
+.brGameListEntry {
+    @extend .flexCol;
+    @extend .center;
+
+    background-color: white;
+    color: black !important;
+    padding: 1em;
+    align-items: stretch;
+    color: white;
+    border-radius: inherit;
+    transition: 150ms;
+
+    &:hover {
+        scale: 1.05;
+    }
+}

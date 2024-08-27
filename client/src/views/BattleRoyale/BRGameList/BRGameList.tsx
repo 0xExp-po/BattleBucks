@@ -3,7 +3,6 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router";
 import { useTelegramColors } from "../../../utils/telegram";
 import Chooser from "../../../components/Chooser/Chooser";
-import Pill from "../../../components/Pill";
 import Loader from "../../../components/Loader/Loader";
 import Button from "../../../components/Button/Button";
 import Back from "../../../components/Back/Back";
@@ -78,17 +77,18 @@ function BRGameList(props: BRGameListProps) {
             <Loader />
           </motion.div>
           {games.map((game, i) => (
-            <button key={i} onClick={() => joinGame(game)} style={{ borderRadius: 9999 }}>
-              <Pill style={{ alignItems: "stretch", color: "white", borderRadius: "inherit" }}>
-                <div className="flexRow flex" style={{ justifyContent: "space-between" }}>
-                  <div>BO1</div>
-                  <div>Winner Only</div>
+            <button key={i} onClick={() => joinGame(game)} style={{ borderRadius: "15px" }}>
+              <div className="brGameListEntry">
+                <div className="flexRow" style={{ justifyContent: "space-between" }}>
+                  <div className="flexCol start" style={{ alignItems: "flex-start", fontSize: "1.1em" }}>
+                    <div>BO1</div>
+                    <div><b>{game.participants.length}</b> / <b>{game.maxPlayers}</b></div>
+                  </div>
+                  <div className="flexRow center">
+                    <div><Token fontSize="1.5em">{game.buyIn}</Token></div>
+                  </div>
                 </div>
-                <div className="flexRow flex" style={{ justifyContent: "space-between" }}>
-                  <div><b>{game.participants.length}</b> / <b>{game.maxPlayers}</b></div>
-                  <div><Token>{game.buyIn}</Token></div>
-                </div>
-              </Pill>
+              </div>
             </button>
           ))}
         </div>

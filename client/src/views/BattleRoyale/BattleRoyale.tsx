@@ -2,7 +2,7 @@ import { useNavigate, useRoutes } from "react-router";
 import { AnimatePresence } from "framer-motion";
 import { io } from "socket.io-client";
 import { useTelegram } from "../../utils/telegram";
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import SocketContext, { SocketBaseUrl } from "../../utils/socket";
 import ViewTransition from "../../components/ViewTransition/ViewTransition";
 import BRCreate from "./BRCreate/BRCreate";
@@ -17,28 +17,40 @@ function BattleRoyale() {
 
   const [currentOpponent, setCurrentOpponent] = useState("BROpponent");
 
+  useEffect(() => {
+    socket.on("S2C_ERROR", (e) => {
+      console.error(e);
+    });
+    return () => {
+      socket.off("S2C_ERROR");
+    }
+  }, []);
+
   // game join
   const onGameJoin = (game: Game) => {
     if (!telegram.initData) return;
 
     console.log("joined game", game);
-    const ns = io(SocketBaseUrl + "/" + game.id, {
-      extraHeaders: { token: telegram.initData.token }
-    });
+    console.log("attempting to join to nsp")
 
-    ns.on("connect", () => {
-      console.log("Connected to nsp");
-    });
-
-    ns.on("S2C_PLAYER_JOINED", (r) => {
+    socket.on("S2C_PLAYER_JOINED", (r) => {
       console.log("player join", r);
-      if (r.playerId !== ns.id)
-        return
+      if (r.playerId !== socket.id)
+        return;
 
       console.info("confirmed", game.id);
       navigate("/game", { state: { game: game } });
     });
-    ns.on("S2C_GAME_STARTED", r => console.log("dsdfs", r));
+
+    socket.on("S2C_GAME_STARTED", r => {
+      console.log("GAME STARTED RECEIVED", r)
+
+      const game = {
+        id: "gameid"
+      };
+
+      navigate("/br/game", { state: { game } });
+    });
 
     socket.emit("C2S_JOIN_GAME", { gameId: game.id });
     //navigate("/br/lobby");

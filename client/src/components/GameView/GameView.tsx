@@ -6,7 +6,7 @@ import Avatar from "../../components/Avatar";
 import { AnimationControls, AnimationDefinition, motion, useAnimationControls } from "framer-motion";
 import { CSSProperties, useState } from "react";
 import { timeout } from "../../utils/timeout";
-import "./Versus.scss"
+import "./GameView.scss"
 
 type Item = "rock" | "paper" | "scissors";
 

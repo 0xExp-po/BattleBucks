@@ -15,25 +15,21 @@ function Welcome() {
 
   return (
     <div className="welcome flexCol flex" style={{ padding: "1em", overflow: "auto" }}>
-      <div style={{ display: "flex", gap: "0.25em", marginBottom: "1em" }}>
-        <Button className="flex"><div style={{ fontSize: "1em" }}>Balance: <b>$250</b></div></Button>
-        <Button className="flex">
-          <div style={{ fontSize: "0.7em" }}>Selected mode</div>
-          <div style={{ fontWeight: "bold" }}>Normal</div>
-        </Button>
+      <div style={{ position: "absolute", right: "1em", top: "1.5em", zIndex: 1 }}>
+        <LanguageBubble />
       </div>
-      <div style={{ display: "flex", position: "relative" }}>
-        <div style={{ position: "absolute", right: 0, zIndex: 1 }}>
-          <LanguageBubble />
+      <div className="flexCol" style={{ marginTop: "4em"}}>
+        <div style={{ display: "flex", position: "relative" }}>
+          <Logo />
         </div>
-        <Logo />
+        <h4>{l(LanguageString.welcomeBack)}, <b style={{ color: "rgb(229, 243, 255)" }}>{initDataUnsafe.user?.first_name ?? "Player"}</b>!</h4>
+        <div className="flexCol" style={{ margin: "1.5em 0", gap: "1em" }}>
+          <Button type="firstPlan" onClick={() => navigate("/br/games")}>⚔️ Battle Royale</Button>
+          <Button type="big" comingSoonBanner onClick={() => navigate("/vs/lobby")}>1v1</Button>
+        </div>
+        <Button onClick={() => navigate("/profile")}><div style={{ fontSize: "1em" }}>👤 Profile</div></Button>
+
       </div>
-      <h4>{l(LanguageString.welcomeBack)}, <b style={{ color: "rgb(229, 243, 255)" }}>{initDataUnsafe.user?.first_name ?? "Player"}</b>!</h4>
-      <div className="flexCol" style={{ margin: "1.5em 0", gap: "1em" }}>
-        <Button type="big" colorfulBorder onClick={() => navigate("/vs/lobby")}>1v1</Button>
-        <Button type="big" comingSoonBanner onClick={() => navigate("/br/games")}>Battle Royale</Button>
-      </div>
-      <Button onClick={() => navigate("/profile")}><div style={{ fontSize: "1em" }}>Profile</div></Button>
     </div>
   )
 }

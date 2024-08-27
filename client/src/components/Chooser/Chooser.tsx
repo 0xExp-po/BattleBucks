@@ -11,23 +11,21 @@ interface ChooserProps {
   options: Combined[] | ValidTypes[];
   default?: ValidTypes;
   onChange?: (value: ValidTypes) => void;
+  style?: React.CSSProperties;
 }
 
 function Chooser(props: ChooserProps) {
-  const [value, setValue] = useState(props.default);
+  const options: Combined[] = typeof props.options[0] === "object" ? props.options as Combined[] : props.options.map(t => ({ value: (t as ValidTypes), label: (t as ValidTypes)?.toString() }));
+  const [value, setValue] = useState(props.default || options[0].value);
 
-  let options: ValidTypes[] = [];
-  if (props.options.length > 0) {
-    options = typeof props.options[0] === "object" ? props.options.map(v => (v as Combined).value) : props.options as ValidTypes[];
-  }
+  const values: ValidTypes[] = options.map(o => o.value);
 
   const onChange = (_: MouseEvent<HTMLSelectElement>) => {
     let newVal = value;
 
-    console.log("portn", newVal);
     do {
-      let index = options.indexOf(newVal);
-      newVal = options[(index + 1) % options.length];
+      let index = values.indexOf(newVal);
+      newVal = options[(index + 1) % options.length].value;
     } while (newVal === undefined);
 
     setValue(newVal);
@@ -35,13 +33,11 @@ function Chooser(props: ChooserProps) {
   }
 
   return (
-    <div className={(props.labelPosition === "top" ? "flexCol" : "flexRow") + " center"} style={{ gap: "0.5em" }}>
-      <label className="flexRow center" htmlFor={props.name}>{props.label}</label>
-      <select name={props.name} defaultValue={value} value={value} onClick={onChange} onMouseDown={e => e.preventDefault()} className="chooserOption">
-        {props.options.map(option => {
-          const value = typeof option === "object" ? option.value : option;
-          const label = typeof option === "object" ? option.label : option;
-          return <option key={value ?? null} value={value}>{label}</option>;
+    <div className={(props.labelPosition === "top" ? "flexCol" : "flexRow") + " center"} style={{ gap: "0.5em", ...props.style }}>
+      <label className="flexRow center outline2" htmlFor={props.name}>{props.label}</label>
+      <select name={props.name} value={value} onClick={onChange} onMouseDown={e => e.preventDefault()} onChange={() => {}} className="chooserOption">
+        {options.map(option => {
+          return <option key={option.value} value={option.value}>{option.label || option.value}</option>;
         })}
       </select>
     </div>

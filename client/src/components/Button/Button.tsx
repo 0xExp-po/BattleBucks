@@ -1,11 +1,10 @@
 import { CSSProperties } from "react";
-import { Children } from "../../types";
 import ComingSoon from "../../assets/coming_soon2.png";
 import "./Button.scss";
 
 interface ButtonProps {
   children: Children;
-  type?: "normal" | "big" | "accept" | "cancel";
+  type?: "normal" | "big" | "accept" | "cancel" | "firstPlan";
   style?: CSSProperties;
   onClick?: React.MouseEventHandler<HTMLButtonElement>;
   className?: string;
