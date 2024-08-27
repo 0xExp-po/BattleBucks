@@ -3,8 +3,10 @@
 .chooserOption {
     @extend .flexRow;
     @extend .center;
+    @extend .flex;
 
     min-height: fit-content;
+    font-size: 1em;
     text-align: center;
     border: 0;
     border-radius: 8px;
@@ -12,4 +14,5 @@
     padding: 0.5em;
     min-width: 4em;
     appearance: none;
+    cursor: pointer;
 }

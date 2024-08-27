@@ -1,5 +1,5 @@
 import { motion, useIsPresent } from "framer-motion";
-import { Children } from "../../utils/types";
+import { Children } from "../../types";
 import "./ViewTransition.scss";
 
 interface SlideRightChildren {
