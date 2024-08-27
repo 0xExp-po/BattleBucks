@@ -56,14 +56,17 @@ function useTelegram() {
   return useContext(TelegramContext);
 }
 
+let def: string;
+
 function useTelegramColors(colors: { header: string }) {
   const WebApp = window.Telegram.WebApp;
   const [initialHeader] = useState(WebApp.headerColor);
+  if (!def) def = WebApp.headerColor;
 
   useEffect(() => {
     if (!WebApp) return;
     WebApp.setHeaderColor(colors.header);
-    return () => WebApp.setHeaderColor(initialHeader);
+    return () => WebApp.setHeaderColor(def || initialHeader);
   }, []);
 }
 

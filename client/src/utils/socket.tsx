@@ -1,7 +1,7 @@
 import { createContext, useEffect, useState } from "react"
 import io, { Socket } from "socket.io-client";
 
-const BaseUrl = "http://localhost:5000";
+export const SocketBaseUrl = "http://localhost:5000";
 
 const SocketContext = createContext<Socket>({} as Socket);
 
@@ -9,7 +9,7 @@ export default SocketContext;
 
 export const SocketProvider = ({ token, children }: { token: string, children: React.ReactNode }) => {
   const [socket] = useState(() => {
-    return io(BaseUrl, {
+    return io(SocketBaseUrl, {
       extraHeaders: { token: token }
     });
   });
