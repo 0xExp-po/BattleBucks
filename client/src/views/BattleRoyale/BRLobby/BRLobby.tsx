@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router";
+import { useEffect, useRef } from "react";
+import { useNavigate } from "react-router";
 import { timeout } from "../../../utils/timeout";
 import Loader from "../../../components/Loader/Loader";
 import Logo from "../../../components/Logo/Logo";
@@ -7,39 +7,41 @@ import Button from "../../../components/Button/Button";
 import MatchFoundOverlay from "../../../components/MatchFoundOverlay/MatchFoundOverlay";
 import "./BRLobby.scss";
 
-function BRLobby() {
-  const [currentPlayers, setCurrentPlayers] = useState(15);
-  const [maxPlayers, setMaxPlayers] = useState(32);
-  const [gameReady, setGameReady] = useState(false);
+function BRLobby(props: { game?: Game, gameReady: boolean, onGameReady: () => void }) {
   const rendered = useRef(true);
-  const location = useLocation();
-  const [gameId] = useState(location.state?.gameId);
   const navigate = useNavigate();
+  const game = props.game;
 
   const textDuration = 2000;
 
   const startGame = async () => {
-    await timeout(3000);
-    setGameReady(true)
-    //await timeout(textDuration);
-    //rendered.current && navigate("/br");
+    await timeout(textDuration);
+    //props.onGameReady();
   }
 
   useEffect(() => {
+    if (!props.gameReady) return;
     startGame();
+  }, [props.gameReady]);
+
+  useEffect(() => {
+    console.log("entered game", game);
     return () => { rendered.current = false };
   }, []);
 
+  // validate game
   useEffect(() => {
-    if (!gameId) {
-      console.error("game id undefined");
+    if (!game) {
+      console.error("game undefined");
       navigate("/");
       return;
     }
-    console.log("game id", gameId);
+    console.log("game id", game);
   }, []);
 
-  if (!gameId) return <div></div>;
+  if (!game) return <div></div>;
+
+  console.log(props.gameReady);
 
   return (
     <div className="brLobby flexCol flex center">
@@ -48,13 +50,13 @@ function BRLobby() {
       <h3>
         Players:
         <div className="flexRow center" style={{ gap: "1em" }}>
-          <b>{currentPlayers}</b> / <b>{maxPlayers}</b>
+          <b>{game.participants.length}</b> / <b>{game.maxPlayers}</b>
         </div>
       </h3>
       <div className="flexRow" style={{ width: "100%" }}>
         <Button className="flexRow flex" style={{ margin: "2em" }} onClick={() => navigate("/")}>Exit</Button>
       </div>
-      <MatchFoundOverlay trigger={gameReady} duration={textDuration} />
+      <MatchFoundOverlay trigger={props.gameReady} duration={textDuration} />
     </div>
   );
 }

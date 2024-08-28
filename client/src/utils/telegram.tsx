@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { trpc } from "../trpc/trpc";
 
 interface TelegramData {
@@ -6,7 +6,22 @@ interface TelegramData {
   initData?: Telegram.AuthenticatedData;
   checked: boolean;
   valid: boolean;
+  tokenData?: {
+    exp: number,
+    iat: number,
+    userId: string,
+  };
 };
+
+function parseJwt(token: string) {
+  var base64Url = token.split('.')[1];
+  var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+  var jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function (c) {
+    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+  }).join(''));
+
+  return JSON.parse(jsonPayload);
+}
 
 // intended to be used only once
 function useTelegramData() {
@@ -17,6 +32,11 @@ function useTelegramData() {
 
   const WebApp = window.Telegram.WebApp;
   const initDataUnsafe: Telegram.InitDataUnsafe = WebApp.initDataUnsafe;
+
+  const tokenData: any = useMemo(() => {
+    if (!initData) return;
+    return parseJwt(initData.token);
+  }, [initData?.token]);
 
   useEffect(() => {
     if (!WebApp.initData) {
@@ -37,7 +57,7 @@ function useTelegramData() {
     setChecked(true);
   }, []);
 
-  return { initDataUnsafe, initData, checked, valid } as TelegramData;
+  return { initDataUnsafe, initData, tokenData, checked, valid } as TelegramData;
 }
 
 const TelegramContext = createContext<TelegramData>({} as TelegramData);

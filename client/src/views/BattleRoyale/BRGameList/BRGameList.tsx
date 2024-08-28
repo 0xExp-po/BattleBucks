@@ -68,7 +68,7 @@ function BRGameList(props: BRGameListProps) {
           <div className="flexCol center">
             <div className="flexRow" style={{ gap: "1em" }}>
               <Chooser label="Buyin:" options={["All", 1, 2]} onChange={(e) => setBuyin(typeof e === "number" ? e : undefined)} />
-              <Chooser label="Max Players:" options={["All", 8, 16, 32, 64]} onChange={e => setMaxPlayers(typeof e === "number" ? e : undefined)} />
+              <Chooser label="Max Players:" options={["All", 4, 8, 16, 32, 64]} onChange={e => setMaxPlayers(typeof e === "number" ? e : undefined)} />
             </div>
           </div>
         </div>
