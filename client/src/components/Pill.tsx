@@ -1,5 +1,5 @@
 import { CSSProperties } from "react";
-import { Children } from "../utils/types";
+import { Children } from "../types";
 
 interface PillProps {
   children: Children;

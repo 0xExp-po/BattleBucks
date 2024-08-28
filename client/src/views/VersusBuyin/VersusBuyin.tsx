@@ -8,7 +8,7 @@ import { useLocation, useNavigate } from "react-router";
 import { motion } from "framer-motion";
 import { timeout } from "../../utils/timeout";
 import { trpc } from "../../trpc/trpc";
-import { Game } from "../../utils/types";
+import { Game } from "../../types";
 import "./VersusBuyin.scss";
 import Token from "../../components/Token/Token";
 
