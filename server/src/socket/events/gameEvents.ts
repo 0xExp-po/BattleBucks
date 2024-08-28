@@ -45,7 +45,7 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
             playerId: socket.user.userId,
           },
         });
-        io.emit("S2C_GAME_CREATED", { gameId: game.id });
+        io.emit("S2C_GAME_CREATED", { game });
       } catch (error) {
         console.error(`Failed to create game:`, error);
         socket.emit("S2C_ERROR", {
