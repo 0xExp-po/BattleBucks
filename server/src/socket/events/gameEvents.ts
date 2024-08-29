@@ -247,6 +247,30 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
             totalMoves: participantCount,
             winner: winnerId,
           });
+
+          for (const socketId in userStatus) {
+            const user = userStatus[socketId];
+            if (user?.gameId === data.gameId) {
+              userStatus[socketId] = { ...user, status: "ONLINE" };
+            }
+          }
+      
+          try {
+            await prisma.game.update({
+              where: { id: data.gameId },
+              data: { status: GameStatus.CLOSED },
+            });
+          } catch (error) {
+            console.error(`Failed to update game status for game ${data.gameId}:`, error);
+            socket.emit("S2C_ERROR", {
+              message: "Failed to end the game. Please try again.",
+            });
+            return;
+          }
+      
+          io.to(data.gameId).emit("S2C_GAME_ENDED", {
+            winnerId: game.winner,
+          });
         } else {
           // Multiple players remain, continue the game
           io.to(data.gameId).emit("S2C_MOVE_SUBMITTED", {
