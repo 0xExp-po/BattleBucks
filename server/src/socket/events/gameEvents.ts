@@ -17,6 +17,12 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
     }) => {
       console.log(`Creating game with data:`, data);
       try {
+        if (!data) {
+          socket.emit("S2C_ERROR", {
+            message: "Invalid data. Please provide game details.",
+          });
+          return;
+        }
         if (!data.maxPlayers || data.maxPlayers <= 0) {
           socket.emit("S2C_ERROR", {
             message: "Invalid max players. Please enter a positive number.",
@@ -57,9 +63,9 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
 
   // Handle player joining a game room
   socket.on("C2S_JOIN_GAME", async (data: { gameId: string }) => {
-    console.log(`Player ${socket.user.userId} joining game ${data.gameId}`);
+    console.log(`Player ${socket.user.userId} joining game ${data?.gameId}`);
     try {
-      if (!data.gameId) {
+      if (!data || !data.gameId) {
         socket.emit("S2C_ERROR", {
           message: "Game ID is required.",
         });
@@ -68,7 +74,7 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
       const gameParticipant = await prisma.gameParticipant.create({
         data: {
           gameId: data.gameId,
-          playerId: userStatus[socket.id].userId || "",
+          playerId: userStatus[socket.id]?.userId || "",
         },
       });
       socket.join(data.gameId);
@@ -114,10 +120,10 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
     "C2S_SUBMIT_MOVE",
     async (data: { gameId: string; move: MoveType; round: number }) => {
       console.log(
-        `Player ${socket.user.userId} submitted move in game ${data.gameId}`
+        `Player ${socket.user.userId} submitted move in game ${data?.gameId}`
       );
       try {
-        if (!data.gameId || !data.move || data.round < 0) {
+        if (!data || !data.gameId || !data.move || typeof data.round !== 'number' || data.round < 0) {
           socket.emit("S2C_ERROR", {
             message: "Invalid game ID, move, or round.",
           });
@@ -213,12 +219,19 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
   socket.on(
     "C2S_END_GAME",
     async (data: { gameId: string; winnerId: string }) => {
-      console.log(`Game ${data.gameId} ended. Winner is ${data.winnerId}`);
+      console.log(`Game ${data?.gameId} ended. Winner is ${data?.winnerId}`);
+
+      if (!data || !data.gameId || !data.winnerId) {
+        socket.emit("S2C_ERROR", {
+          message: "Invalid game end data. Game ID and winner ID are required.",
+        });
+        return;
+      }
 
       // Update the status of all participants
       for (const socketId in userStatus) {
         const user = userStatus[socketId];
-        if (user.gameId === data.gameId) {
+        if (user?.gameId === data.gameId) {
           userStatus[socketId] = { ...user, status: "ONLINE" };
         }
       }
@@ -247,6 +260,12 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
 
   // Update game state
   socket.on("C2S_UPDATE_GAME_STATE", (data: { gameId: string; state: any }) => {
+    if (!data || !data.gameId || data.state === undefined) {
+      socket.emit("S2C_ERROR", {
+        message: "Invalid game state update data.",
+      });
+      return;
+    }
     console.log(`Updating game state for ${data.gameId}`);
     io.to(data.gameId).emit("S2C_GAME_STATE_UPDATED", {
       gameId: data.gameId,
@@ -256,9 +275,9 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
 
   // Handle user leaving a game
   socket.on("C2S_LEAVE_GAME", async (data: { gameId: string }) => {
-    console.log(`Player ${socket.user.userId} leaving game ${data.gameId}`);
+    console.log(`Player ${socket.user.userId} leaving game ${data?.gameId}`);
     try {
-      if (!data.gameId) {
+      if (!data || !data.gameId) {
         socket.emit("S2C_ERROR", {
           message: "Game ID is required.",
         });
