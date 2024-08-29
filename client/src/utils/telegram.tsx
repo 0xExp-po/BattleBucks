@@ -23,6 +23,26 @@ function parseJwt(token: string) {
   return JSON.parse(jsonPayload);
 }
 
+function generateID() {
+  let res = "";
+
+  for (let i = 0; i < 20; i++) {
+    res += Math.floor(Math.random() * 10);
+  }
+
+  return res;
+}
+
+function generateName() {
+  const names = ["Ivan", "Pero", "Mate", "Sime", "Stipe", "Jure"];
+  return names[Math.floor(Math.random() * names.length)];
+}
+
+function generateSurname() {
+  const names = ["Peric", "Berislavic", "Radic", "Cvitanovic", "Rakic", "Sakic"];
+  return names[Math.floor(Math.random() * names.length)];
+}
+
 // intended to be used only once
 function useTelegramData() {
   const [checked, setChecked] = useState(false);
@@ -38,11 +58,10 @@ function useTelegramData() {
     return parseJwt(initData.token);
   }, [initData?.token]);
 
-  useEffect(() => {
-    if (!WebApp.initData) {
-      console.log("Not in Telegram webview");
-      return;
-    }
+  console.log("Yippe", initData, tokenData)
+
+  // for production use
+  const handleInVebView = () => {
     console.info("InitDataUnsafe", WebApp.initDataUnsafe);
     console.info("Verifying initData:", WebApp.initData);
     authUserMutation.mutateAsync({ initData: WebApp.initData }).then(r => {
@@ -54,6 +73,31 @@ function useTelegramData() {
       }
       setInitData(r.result || undefined);
     });
+  }
+
+  // for testing purposes
+  const handleNotInWebView = () => {
+    console.log("Not in Telegram webview, sending dummy data");
+
+    const fakeData = {
+      id: generateID(),
+      first_name: generateName(),
+      last_name: generateSurname(),
+    };
+
+    authUserMutation.mutateAsync({ initData: new URLSearchParams(fakeData).toString() }).then(r => {
+      console.info(r);
+      setValid(r.status === 200);
+      console.info("fake initdata result: ", r.result);
+      if (r.result === null) {
+        console.info("telegram user could not be verified");
+      }
+      setInitData(r.result || undefined);
+    });
+  }
+
+  useEffect(() => {
+    WebApp.initData ? handleInVebView() : handleNotInWebView();
     setChecked(true);
   }, []);
 
