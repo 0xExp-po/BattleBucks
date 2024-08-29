@@ -8,79 +8,108 @@ import { CustomSocket } from "..";
 
 export const gameEvents = (socket: CustomSocket, io: Server) => {
   // Notify game created
-  socket.on(
-    "C2S_CREATE_GAME",
-    async (data: {
-      buyIn?: number;
-      maxPlayers: number;
-      gameType: GameType;
-    }) => {
-      console.log(`Creating game with data:`, data);
-      try {
-        if (!data) {
-          socket.emit("S2C_ERROR", {
-            message: "Invalid data. Please provide game details.",
-          });
-          return;
-        }
-        if (!data.maxPlayers || data.maxPlayers <= 0) {
-          socket.emit("S2C_ERROR", {
-            message: "Invalid max players. Please enter a positive number.",
-          });
-          return;
-        }
-        if (!data.gameType) {
-          socket.emit("S2C_ERROR", {
-            message: "Game type is required.",
-          });
-          return;
-        }
-        const game = await prisma.game.create({
-          data: {
-            buyIn: data.buyIn,
-            maxPlayers: data.maxPlayers,
-            eliminatedPlayersCnt: 0,
-            gameType: data.gameType,
-            status: GameStatus.OPEN,
-          },
-        });
-        // Automatically add the creator to the game
-        await prisma.gameParticipant.create({
-          data: {
-            gameId: game.id,
-            playerId: socket.user.userId,
-          },
-        });
-        io.emit("S2C_GAME_CREATED", { game });
-      } catch (error) {
-        console.error(`Failed to create game:`, error);
+  socket.on("C2S_CREATE_GAME", async (data: { buyIn?: number; maxPlayers: number; gameType: GameType }) => {
+    console.log(`Creating game with data:`, data);
+    try {
+      if (typeof data === "string") data = JSON.parse(data);
+      if (!data) {
         socket.emit("S2C_ERROR", {
-          message: "Failed to create the game. Please try again.",
+          message: "Invalid data. Please provide game details.",
         });
+        return;
       }
+      if (!data.maxPlayers || data.maxPlayers <= 0) {
+        socket.emit("S2C_ERROR", {
+          message: "Invalid max players. Please enter a positive number.",
+        });
+        return;
+      }
+      if (!data.gameType) {
+        socket.emit("S2C_ERROR", {
+          message: "Game type is required.",
+        });
+        return;
+      }
+      const game = await prisma.game.create({
+        data: {
+          buyIn: data.buyIn,
+          maxPlayers: data.maxPlayers,
+          eliminatedPlayersCnt: 0,
+          gameType: data.gameType,
+          status: GameStatus.OPEN,
+        },
+        include: {
+          participants: true,
+        },
+      });
+
+      // Automatically add the creator to the game
+      await prisma.gameParticipant.create({
+        data: {
+          gameId: game.id,
+          playerId: socket.user.userId,
+        },
+      });
+
+      // Fetch the updated game with participants
+      const updatedGame = await prisma.game.findUnique({
+        where: { id: game.id },
+        include: {
+          participants: true,
+        },
+      });
+
+      io.emit("S2C_GAME_CREATED", { game: updatedGame });
+    } catch (error) {
+      console.error(`Failed to create game:`, error);
+      socket.emit("S2C_ERROR", {
+        message: "Failed to create the game. Please try again.",
+      });
     }
-  );
+  });
 
   // Handle player joining a game room
   socket.on("C2S_JOIN_GAME", async (data: { gameId: string }) => {
-    console.log(`Player ${socket.user.userId} joining game ${data?.gameId}`);
     try {
+      if (typeof data === "string") data = JSON.parse(data);
       if (!data || !data.gameId) {
         socket.emit("S2C_ERROR", {
           message: "Game ID is required.",
         });
         return;
       }
-      const gameParticipant = await prisma.gameParticipant.create({
-        data: {
-          gameId: data.gameId,
-          playerId: userStatus[socket.id]?.userId || "",
+      console.log(`Player ${socket.user.userId} joining game ${data?.gameId}`);
+      let gameParticipant = await prisma.gameParticipant.findUnique({
+        where: {
+          gameId_playerId: {
+            gameId: data.gameId,
+            playerId: socket.user.userId,
+          },
         },
       });
+      if (!gameParticipant) {
+        gameParticipant = await prisma.gameParticipant.create({
+          data: {
+            gameId: data.gameId,
+            playerId: userStatus[socket.id]?.userId || "",
+          },
+        });
+      }
       socket.join(data.gameId);
+
+      // Fetch all users in the same room
+      const usersInRoom = await prisma.gameParticipant.findMany({
+        where: { gameId: data.gameId },
+        include: { player: true },
+      });
+
       io.to(data.gameId).emit("S2C_PLAYER_JOINED", {
         playerId: socket.user.userId,
         gameParticipant,
+        usersInRoom: usersInRoom.map((participant) => ({
+          userId: participant.player.id,
+          username: participant.player.username,
+        })),
       });
     } catch (error) {
       console.error(`Failed to join game:`, error);
@@ -91,24 +120,31 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
   });
 
   // Handle game start notification
-  socket.on("C2S_START_GAME", async (gameId: string) => {
-    console.log(`Game ${gameId} started`);
+  socket.on("C2S_START_GAME", async (data: { gameId: string }) => {
     try {
-      if (!gameId) {
+      if (typeof data === "string") data = JSON.parse(data);
+      if (!data || !data.gameId) {
         socket.emit("S2C_ERROR", {
           message: "Game ID is required.",
         });
         return;
       }
+
+      // Check if the socket is in the game room, if not, join it
+      if (!socket.rooms.has(data.gameId)) {
+        socket.join(data.gameId);
+      }
+
       await prisma.game.update({
-        where: { id: gameId },
+        where: { id: data.gameId },
         data: { status: GameStatus.IN_PROGRESS },
       });
-      io.to(gameId).emit("S2C_GAME_STARTED", {
-        gameId: gameId,
+      console.log(`Game ${data?.gameId} started`);
+      io.to(data.gameId).emit("S2C_GAME_STARTED", {
+        gameId: data.gameId,
       });
     } catch (error) {
-      console.error(`Failed to update game status for game ${gameId}:`, error);
+      console.error(`Failed to update game status for game ${data.gameId}:`, error);
       socket.emit("S2C_ERROR", {
         message: "Failed to start the game. Please try again.",
       });
@@ -116,150 +152,169 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
   });
 
   // Handle move submission in a game
-  socket.on(
-    "C2S_SUBMIT_MOVE",
-    async (data: { gameId: string; move: MoveType; round: number }) => {
-      console.log(
-        `Player ${socket.user.userId} submitted move in game ${data?.gameId}`
-      );
-      try {
-        if (!data || !data.gameId || !data.move || typeof data.round !== 'number' || data.round < 0) {
-          socket.emit("S2C_ERROR", {
-            message: "Invalid game ID, move, or round.",
+  socket.on("C2S_SUBMIT_MOVE", async (data: { gameId: string; move: MoveType; round: number }) => {
+    if (typeof data === "string") data = JSON.parse(data);
+    if (!data || !data.gameId || !data.move || typeof data.round !== "number" || data.round < 0) {
+      socket.emit("S2C_ERROR", {
+        message: "Invalid game ID, move, or round.",
+      });
+      return;
+    }
+
+    try {
+      // Check if the game has started and has the correct number of participants
+      const game = await prisma.game.findUnique({
+        where: { id: data.gameId },
+        include: { participants: true },
+      });
+
+      if (!game || game.status !== GameStatus.IN_PROGRESS) {
+        socket.emit("S2C_ERROR", {
+          message: "The game has not started or is already finished.",
+        });
+        return;
+      }
+
+      // Check if the socket is in the game room, if not, join it
+      if (!socket.rooms.has(data.gameId)) {
+        socket.join(data.gameId);
+      }
+
+      // Check if the player has already submitted a move for this round
+      const existingMove = await prisma.gameLog.findFirst({
+        where: {
+          gameId: data.gameId,
+          playerId: socket.user.userId,
+          round: data.round,
+        },
+      });
+
+      if (existingMove) {
+        socket.emit("S2C_ERROR", {
+          message: "You have already submitted a move for this round.",
+        });
+        return;
+      }
+
+      console.log(`Player ${socket.user.userId} submitted move in game ${data?.gameId}`);
+
+      // Log the move in the database
+      await prisma.gameLog.create({
+        data: {
+          gameId: data.gameId,
+          playerId: socket.user.userId,
+          move: data.move,
+          round: data.round,
+        },
+      });
+
+      // Check if all players have submitted their moves
+      const num = game.maxPlayers - game.eliminatedPlayersCnt;
+      const gameLogs = await prisma.gameLog.findMany({
+        where: { gameId: data.gameId, round: data.round },
+        orderBy: { createdAt: "asc" },
+        take: num,
+      });
+
+      if (gameLogs.length < num) {
+        socket.emit("S2C_WAIT_FOR_OTHER_PLAYERS", {
+          gameId: data.gameId,
+          round: data.round,
+          submittedMoves: gameLogs.length,
+          totalMoves: num,
+          message: "Not all players have submitted their moves.",
+        });
+      }
+
+      // Determine the remaining and eliminated players
+      const result = determineWinner(gameLogs);
+
+      if (result === "draw") {
+        io.to(data.gameId).emit("S2C_DRAW", {
+          message: "It's a draw! Replay the round.",
+        });
+      } else {
+        // Handle the remaining and eliminated players
+        const { remainingPlayers, eliminatedPlayers } = result;
+
+        // Update the game with the winner or continue with remaining players
+        if (remainingPlayers.length === 1) {
+          // Only one player remains, declare them the winner
+          const winnerId = remainingPlayers[0];
+          await prisma.game.update({
+            where: { id: data.gameId },
+            data: { winner: winnerId, status: GameStatus.CLOSED },
           });
-          return;
-        }
-        // Log the move in the database
-        await prisma.gameLog.create({
-          data: {
-            gameId: data.gameId,
+
+          io.to(data.gameId).emit("S2C_MOVE_SUBMITTED", {
             playerId: socket.user.userId,
             move: data.move,
-            round: data.round,
-          },
-        });
-
-        // Check if all players have submitted their moves
-        const game = await prisma.game.findUnique({
-          where: { id: data.gameId },
-          include: {
-            participants: true, // Include participants to check how many are left
-          },
-        });
-
-        if (game) {
-          // All players have submitted their moves, determine the remaining players
-          const num = game.maxPlayers - game.eliminatedPlayersCnt;
-          const gameLogs = await prisma.gameLog.findMany({
-            where: { gameId: data.gameId, round: data.round },
-            orderBy: { createdAt: "asc" },
-            take: num,
+            winner: winnerId,
+          });
+        } else {
+          // Multiple players remain, continue the game
+          io.to(data.gameId).emit("S2C_MOVE_SUBMITTED", {
+            playerId: socket.user.userId,
+            move: data.move,
+            remainingPlayers,
+            eliminatedPlayers,
           });
 
-          if (gameLogs.length < game.maxPlayers - game.eliminatedPlayersCnt) {
-            socket.emit("S2C_ERROR", {
-              message: "Not all players have submitted their moves.",
+          // Optionally, notify the eliminated players
+          for (const playerId of eliminatedPlayers) {
+            io.to(playerId).emit("S2C_ELIMINATED", {
+              message: "You have been eliminated from the game.",
             });
-            return;
-          }
-
-          // Determine the remaining and eliminated players
-          const result = determineWinner(gameLogs);
-
-          if (result === "draw") {
-            io.to(data.gameId).emit("S2C_DRAW", {
-              message: "It's a draw! Replay the round.",
-            });
-          } else {
-            // Handle the remaining and eliminated players
-            const { remainingPlayers, eliminatedPlayers } = result;
-
-            // Update the game with the winner or continue with remaining players
-            if (remainingPlayers.length === 1) {
-              // Only one player remains, declare them the winner
-              const winnerId = remainingPlayers[0];
-              await prisma.game.update({
-                where: { id: data.gameId },
-                data: { winner: winnerId, status: GameStatus.CLOSED },
-              });
-
-              io.to(data.gameId).emit("S2C_MOVE_SUBMITTED", {
-                playerId: socket.user.userId,
-                move: data.move,
-                winner: winnerId,
-              });
-            } else {
-              // Multiple players remain, continue the game
-              io.to(data.gameId).emit("S2C_MOVE_SUBMITTED", {
-                playerId: socket.user.userId,
-                move: data.move,
-                remainingPlayers,
-                eliminatedPlayers,
-              });
-
-              // Optionally, notify the eliminated players
-              for (const playerId of eliminatedPlayers) {
-                io.to(playerId).emit("S2C_ELIMINATED", {
-                  message: "You have been eliminated from the game.",
-                });
-              }
-            }
           }
         }
-      } catch (error) {
-        console.error(`Failed to submit move:`, error);
-        socket.emit("S2C_ERROR", {
-          message: "Failed to submit the move. Please try again.",
-        });
       }
-    }
-  );
-
-  // Handle game result notification
-  socket.on(
-    "C2S_END_GAME",
-    async (data: { gameId: string; winnerId: string }) => {
-      console.log(`Game ${data?.gameId} ended. Winner is ${data?.winnerId}`);
-
-      if (!data || !data.gameId || !data.winnerId) {
-        socket.emit("S2C_ERROR", {
-          message: "Invalid game end data. Game ID and winner ID are required.",
-        });
-        return;
-      }
-
-      // Update the status of all participants
-      for (const socketId in userStatus) {
-        const user = userStatus[socketId];
-        if (user?.gameId === data.gameId) {
-          userStatus[socketId] = { ...user, status: "ONLINE" };
-        }
-      }
-
-      try {
-        await prisma.game.update({
-          where: { id: data.gameId },
-          data: { status: GameStatus.CLOSED },
-        });
-      } catch (error) {
-        console.error(
-          `Failed to update game status for game ${data.gameId}:`,
-          error
-        );
-        socket.emit("S2C_ERROR", {
-          message: "Failed to end the game. Please try again.",
-        });
-        return;
-      }
-
-      io.to(data.gameId).emit("S2C_GAME_ENDED", {
-        winnerId: data.winnerId,
+    } catch (error) {
+      console.error(`Failed to submit move:`, error);
+      socket.emit("S2C_ERROR", {
+        message: "Failed to submit the move. Please try again.",
       });
     }
-  );
+  });
+
+  // Handle game result notification
+  socket.on("C2S_END_GAME", async (data: { gameId: string; winnerId: string }) => {
+    if (typeof data === "string") data = JSON.parse(data);
+    if (!data || !data.gameId || !data.winnerId) {
+      socket.emit("S2C_ERROR", {
+        message: "Invalid game end data. Game ID and winner ID are required.",
+      });
+      return;
+    }
+    console.log(`Game ${data?.gameId} ended. Winner is ${data?.winnerId}`);
+    // Update the status of all participants
+    for (const socketId in userStatus) {
+      const user = userStatus[socketId];
+      if (user?.gameId === data.gameId) {
+        userStatus[socketId] = { ...user, status: "ONLINE" };
+      }
+    }
+
+    try {
+      await prisma.game.update({
+        where: { id: data.gameId },
+        data: { status: GameStatus.CLOSED },
+      });
+    } catch (error) {
+      console.error(`Failed to update game status for game ${data.gameId}:`, error);
+      socket.emit("S2C_ERROR", {
+        message: "Failed to end the game. Please try again.",
+      });
+      return;
+    }
+
+    io.to(data.gameId).emit("S2C_GAME_ENDED", {
+      winnerId: data.winnerId,
+    });
+  });
 
   // Update game state
   socket.on("C2S_UPDATE_GAME_STATE", (data: { gameId: string; state: any }) => {
+    if (typeof data === "string") data = JSON.parse(data);
     if (!data || !data.gameId || data.state === undefined) {
       socket.emit("S2C_ERROR", {
         message: "Invalid game state update data.",
@@ -275,6 +330,7 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
 
   // Handle user leaving a game
   socket.on("C2S_LEAVE_GAME", async (data: { gameId: string }) => {
+    if (typeof data === "string") data = JSON.parse(data);
     console.log(`Player ${socket.user.userId} leaving game ${data?.gameId}`);
     try {
       if (!data || !data.gameId) {
