@@ -153,15 +153,12 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
 
   // Handle move submission in a game
   socket.on("C2S_SUBMIT_MOVE", async (data: { gameId: string; move: MoveType; round: number }) => {
-    if (typeof data === "string") data = JSON.parse(data);
-    if (!data || !data.gameId || !data.move || typeof data.round !== "number" || data.round < 0) {
-      socket.emit("S2C_ERROR", {
-        message: "Invalid game ID, move, or round.",
-      });
-      return;
-    }
-
     try {
+      if (typeof data === "string") data = JSON.parse(data);
+      if (!data || !data.gameId || !data.move || typeof data.round !== "number" || data.round < 0) {
+        throw new Error("Invalid game ID, move, or round.");
+      }
+
       // Check if the game has started and has the correct number of participants
       const game = await prisma.game.findUnique({
         where: { id: data.gameId },
@@ -169,13 +166,10 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
       });
 
       if (!game || game.status !== GameStatus.IN_PROGRESS) {
-        socket.emit("S2C_ERROR", {
-          message: "The game has not started or is already finished.",
-        });
-        return;
+        throw new Error("The game has not started or is already finished.");
       }
 
-      // Check if the socket is in the game room, if not, join it
+      // Ensure the socket is in the game room
       if (!socket.rooms.has(data.gameId)) {
         socket.join(data.gameId);
       }
@@ -190,13 +184,10 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
       });
 
       if (existingMove) {
-        socket.emit("S2C_ERROR", {
-          message: "You have already submitted a move for this round.",
-        });
-        return;
+        throw new Error("You have already submitted a move for this round.");
       }
 
-      console.log(`Player ${socket.user.userId} submitted move in game ${data?.gameId}`);
+      console.log(`Player ${socket.user.userId} submitted move in game ${data.gameId}`);
 
       // Log the move in the database
       await prisma.gameLog.create({
@@ -209,35 +200,36 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
       });
 
       // Check if all players have submitted their moves
-      const num = game.maxPlayers - game.eliminatedPlayersCnt;
+      const participantCount = game.maxPlayers - game.eliminatedPlayersCnt; // This may change afterward development
       const gameLogs = await prisma.gameLog.findMany({
         where: { gameId: data.gameId, round: data.round },
         orderBy: { createdAt: "asc" },
-        take: num,
+        take: participantCount,
       });
+      console.log("gameLogs", gameLogs);
+      console.log("participantCount", participantCount);
+      const submittedMoves = gameLogs.length % participantCount;
+      const allMovesSubmitted = submittedMoves === 0;
 
-      if (gameLogs.length < num) {
-        socket.emit("S2C_WAIT_FOR_OTHER_PLAYERS", {
-          gameId: data.gameId,
-          round: data.round,
-          submittedMoves: gameLogs.length,
-          totalMoves: num,
-          message: "Not all players have submitted their moves.",
-        });
+      // Determine the remaining and eliminated players if all moves are submitted
+      let result: { remainingPlayers: string[]; eliminatedPlayers: string[] } | "draw" | undefined;
+      if (allMovesSubmitted) {
+        result = determineWinner(gameLogs);
       }
 
-      // Determine the remaining and eliminated players
-      const result = determineWinner(gameLogs);
-
-      if (result === "draw") {
-        io.to(data.gameId).emit("S2C_DRAW", {
-          message: "It's a draw! Replay the round.",
+      if (result === "draw" || result === undefined) {
+        io.to(data.gameId).emit("S2C_MOVE_SUBMITTED", {
+          playerId: socket.user.userId,
+          move: data.move,
+          gameId: data.gameId,
+          round: data.round,
+          submittedMoves,
+          totalMoves: participantCount,
+          winner: null,
         });
       } else {
-        // Handle the remaining and eliminated players
         const { remainingPlayers, eliminatedPlayers } = result;
 
-        // Update the game with the winner or continue with remaining players
         if (remainingPlayers.length === 1) {
           // Only one player remains, declare them the winner
           const winnerId = remainingPlayers[0];
@@ -249,6 +241,10 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
           io.to(data.gameId).emit("S2C_MOVE_SUBMITTED", {
             playerId: socket.user.userId,
             move: data.move,
+            gameId: data.gameId,
+            round: data.round,
+            submittedMoves,
+            totalMoves: participantCount,
             winner: winnerId,
           });
         } else {
@@ -256,22 +252,28 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
           io.to(data.gameId).emit("S2C_MOVE_SUBMITTED", {
             playerId: socket.user.userId,
             move: data.move,
+            gameId: data.gameId,
+            round: data.round,
+            submittedMoves,
+            totalMoves: participantCount,
             remainingPlayers,
             eliminatedPlayers,
           });
 
-          // Optionally, notify the eliminated players
-          for (const playerId of eliminatedPlayers) {
+          // Notify the eliminated players
+          eliminatedPlayers.forEach(playerId => {
             io.to(playerId).emit("S2C_ELIMINATED", {
               message: "You have been eliminated from the game.",
+              gameId: data.gameId,
+              round: data.round,
             });
-          }
+          });
         }
       }
     } catch (error) {
       console.error(`Failed to submit move:`, error);
       socket.emit("S2C_ERROR", {
-        message: "Failed to submit the move. Please try again.",
+        message: error instanceof Error ? error.message : "Failed to submit the move. Please try again.",
       });
     }
   });
