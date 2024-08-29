@@ -357,7 +357,7 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
   // Handle user leaving a game
   socket.on("C2S_LEAVE_GAME", async (data: { gameId: string }) => {
     if (typeof data === "string") data = JSON.parse(data);
-    console.log(`Player ${socket.user.userId} leaving game ${data?.gameId}`);
+    console.log(`Player ${socket.user.userId} attempting to leave game ${data?.gameId}`);
     try {
       if (!data || !data.gameId) {
         socket.emit("S2C_ERROR", {
@@ -365,6 +365,24 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
         });
         return;
       }
+
+      // Check if the user is actually in the game
+      const participant = await prisma.gameParticipant.findUnique({
+        where: {
+          gameId_playerId: {
+            gameId: data.gameId,
+            playerId: socket.user.userId,
+          },
+        },
+      });
+
+      if (!participant) {
+        socket.emit("S2C_ERROR", {
+          message: "You are not a participant in this game.",
+        });
+        return;
+      }
+
       // Remove the player from the game participants
       await prisma.gameParticipant.delete({
         where: {
@@ -374,10 +392,13 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
           },
         },
       });
+
       socket.leave(data.gameId);
       io.to(data.gameId).emit("S2C_PLAYER_LEFT", {
         playerId: socket.user.userId,
       });
+
+      console.log(`Player ${socket.user.userId} successfully left game ${data.gameId}`);
     } catch (error) {
       console.error(`Failed to leave game:`, error);
       socket.emit("S2C_ERROR", {
