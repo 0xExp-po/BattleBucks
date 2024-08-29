@@ -8,9 +8,9 @@ export function determineWinner(
 
   // Define the rules of the game
   const rules: { [key: string]: string } = {
-    rock: "scissors",
-    paper: "rock",
-    scissors: "paper",
+    ROCK: "SCISSORS",
+    PAPER: "ROCK",
+    SCISSORS: "PAPER",
   };
 
   // Initialize maps to track wins and losses
