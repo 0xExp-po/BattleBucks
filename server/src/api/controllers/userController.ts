@@ -56,31 +56,26 @@ const UpdateProfileInputSchema = z.object({
 
 export const authenticateUser = publicProcedure
   .input(TelegramInputSchema)
-  .output(
-    commonResponse(
-      z
-        .object({ user: UserSchema, isNewUser: z.boolean(), token: z.string() })
-        .nullable()
-    )
-  )
+  .output(commonResponse(z.object({ user: UserSchema, isNewUser: z.boolean(), token: z.string() }).nullable()))
   .mutation(async ({ input, ctx }): Promise<any> => {
     const { initData } = input;
-    const isValid = verifyTelegramLogin(
-      initData,
-      process.env.TELEGRAM_BOT_TOKEN || ""
-    );
-    if (!isValid) {
-      return {
-        status: 400,
-        result: null,
-        error: "Invalid Telegram data",
-      };
+    if (process.env.NODE_ENV === "production") {
+      const isValid = verifyTelegramLogin(initData, process.env.TELEGRAM_BOT_TOKEN || "");
+      if (!isValid) {
+        return {
+          status: 400,
+          result: null,
+          error: "Invalid Telegram data",
+        };
+      }
     }
-    const parsedData = JSON.parse(
-      Object.fromEntries(new URLSearchParams(initData)).user
-    );
-    const { id, first_name, last_name, language_code, allows_write_to_pm } =
-      parsedData;
+    let parsedData;
+    if (process.env.NODE_ENV !== "production") {
+      parsedData = Object.fromEntries(new URLSearchParams(initData));
+    } else {
+      parsedData = JSON.parse(Object.fromEntries(new URLSearchParams(initData)).user);
+    }
+    const { id, first_name, last_name } = parsedData;
     try {
       let user = await prisma.user.findUnique({
         where: { telegramID: id.toString() },
