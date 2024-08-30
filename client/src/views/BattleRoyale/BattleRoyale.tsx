@@ -49,7 +49,7 @@ function BattleRoyale() {
     socket.on("S2C_GAME_STARTED", r => {
       console.log("GAME STARTED RECEIVED", r);
       gameStarted.current = true;
-      rerender({});
+      navigate("/br/lobby");
     });
 
     return () => {
@@ -63,29 +63,9 @@ function BattleRoyale() {
   const onGameJoin = (g: Game) => {
     if (!telegram.initData) return;
 
-    console.log("joined game", g);
+    console.log("joining game", g);
     game.current = g;
     player.current = undefined;
-
-    // ***************
-    // ** TEMPORARY **
-    // ***************
-
-    const interval = setInterval(() => {
-      if (!player.current || !game.current) return;
-
-      game.current.participants.push(player.current);
-
-      if (game.current.participants.length > game.current.maxPlayers) {
-        clearInterval(interval);
-        gameStarted.current = true;
-        navigate("/br/game");
-      }
-    }, 1000);
-
-    // ***************
-    // ** TEMPORARY **
-    // ***************
 
     socket.emit("C2S_JOIN_GAME", { gameId: g.id });
   };
@@ -103,6 +83,14 @@ function BattleRoyale() {
     navigate("/br/lobby");
   };
 
+  const leaveGame = () => {
+    socket.emit("C2S_LEAVE_GAME", { gameId: game.current?.id });
+    game.current = undefined;
+    player.current = undefined;
+    gameStarted.current = false;
+    navigate("/br/games");
+  }
+
   const element = useRoutes([
     {
       path: "game",
@@ -118,7 +106,7 @@ function BattleRoyale() {
     },
     {
       path: "lobby",
-      element: <ViewTransition><BRLobby gameReady={gameStarted.current} onGameReady={() => navigate("/br/game")} game={game.current} /></ViewTransition>
+      element: <ViewTransition><BRLobby onLeave={leaveGame} gameReady={gameStarted.current} onGameReady={() => navigate("/br/game")} game={game.current} /></ViewTransition>
     },
   ]);
 

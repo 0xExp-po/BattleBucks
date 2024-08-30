@@ -58,8 +58,6 @@ function useTelegramData() {
     return parseJwt(initData.token);
   }, [initData?.token]);
 
-  console.log("Yippe", initData, tokenData)
-
   // for production use
   const handleInVebView = () => {
     console.info("InitDataUnsafe", WebApp.initDataUnsafe);

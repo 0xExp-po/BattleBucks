@@ -7,7 +7,14 @@ import Button from "../../../components/Button/Button";
 import MatchFoundOverlay from "../../../components/MatchFoundOverlay/MatchFoundOverlay";
 import "./BRLobby.scss";
 
-function BRLobby(props: { game?: Game, gameReady: boolean, onGameReady: () => void }) {
+interface BRLobbyProps {
+  game?: Game;
+  gameReady: boolean;
+  onGameReady: () => void;
+  onLeave: () => void;
+}
+
+function BRLobby(props: BRLobbyProps) {
   const rendered = useRef(true);
   const navigate = useNavigate();
   const game = props.game;
@@ -54,7 +61,7 @@ function BRLobby(props: { game?: Game, gameReady: boolean, onGameReady: () => vo
         </div>
       </h3>
       <div className="flexRow" style={{ width: "100%" }}>
-        <Button className="flexRow flex" style={{ margin: "2em" }} onClick={() => navigate("/")}>Exit</Button>
+        <Button className="flexRow flex" style={{ margin: "2em" }} onClick={props.onLeave}>Exit</Button>
       </div>
       <MatchFoundOverlay trigger={props.gameReady} duration={textDuration} />
     </div>

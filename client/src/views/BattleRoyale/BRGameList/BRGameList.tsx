@@ -61,7 +61,7 @@ function BRGameList(props: BRGameListProps) {
       <div className="flexCol flex" style={{ overflow: "auto" }}>
         <div className="brGameListHeader flexCol">
           <div className="flexRow">
-            <div className="flex center"><Back /></div>
+            <div className="flex center"><Back to="/" /></div>
             <h3 className="outline2" style={{ fontFamily: "Bangers", flex: 5 }}>Battle Royale</h3>
             <div className="flex"></div>
           </div>
