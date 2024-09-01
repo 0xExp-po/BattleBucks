@@ -53,7 +53,7 @@ export function generateToken(userId: string): string {
   const token = jwt.sign(
     { userId },
     secretKey,
-    { expiresIn: "7d" } // Token expires in 7 days
+    process.env.NODE_ENV === "development" ? {} : { expiresIn: "7d" } // No expire date in development
   );
 
   return token;
