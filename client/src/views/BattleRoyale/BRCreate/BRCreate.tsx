@@ -19,6 +19,7 @@ function BRCreate(props: BRCreateProps) {
   // game create
   useEffect(() => {
     socket.on("S2C_GAME_CREATED", res => {
+      console.log("game created and received", res);
       props.onGameCreate(res.game);
     });
     return () => void socket.off("S2C_GAME_CREATED");
