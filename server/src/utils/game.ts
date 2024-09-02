@@ -1,6 +1,4 @@
-export function determineWinner(
-  gameLogs: { playerId: string; move: string }[]
-): { remainingPlayers: string[], eliminatedPlayers: string[] } | 'draw' {
+export function determineWinner(gameLogs: { playerId: string; move: string }[]): { remainingPlayers: string[]; eliminatedPlayers: string[] } {
   // Validate input
   if (gameLogs.length < 2) {
     throw new Error("At least two players are required to determine a winner.");
@@ -38,21 +36,14 @@ export function determineWinner(
       }
     }
   }
+  console.log("winCounts", winCounts);
+  console.log("lossCounts", lossCounts);
 
   // Determine the players who are eliminated (lost all matchups)
-  const eliminatedPlayers = Object.keys(lossCounts).filter(
-    playerId => lossCounts[playerId] === gameLogs.length - 1
-  );
+  const remainingPlayers = Object.keys(winCounts).filter((playerId) => winCounts[playerId] > 0);
 
   // Determine remaining players (not eliminated)
-  const remainingPlayers = gameLogs
-    .map(log => log.playerId)
-    .filter(playerId => !eliminatedPlayers.includes(playerId));
-
-  // If all remaining players are eliminated, it's a draw
-  if (remainingPlayers.length === 0) {
-    return 'draw';
-  }
+  const eliminatedPlayers = gameLogs.map((log) => log.playerId).filter((playerId) => !remainingPlayers.includes(playerId));
 
   return { remainingPlayers, eliminatedPlayers };
 }
