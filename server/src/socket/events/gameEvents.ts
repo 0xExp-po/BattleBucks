@@ -5,6 +5,7 @@ import { GameStatus, MoveType } from "@prisma/client";
 import { GameType } from "@prisma/client"; // Import GameType for validation
 import { determineWinner } from "../../utils/game";
 import { CustomSocket } from "..";
+import { bountyDistribution, commissionRate } from "../../../config/settings.json";
 
 export const gameEvents = (socket: CustomSocket, io: Server) => {
   // Notify game created
@@ -85,6 +86,7 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
             gameId: data.gameId,
             playerId: socket.user.userId,
           },
+          eliminated: false,
         },
       });
       if (!gameParticipant) {
@@ -99,7 +101,7 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
 
       // Fetch all users in the same room
       const usersInRoom = await prisma.gameParticipant.findMany({
-        where: { gameId: data.gameId },
+        where: { gameId: data.gameId, eliminated: false },
         include: { player: true },
       });
 
@@ -212,12 +214,109 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
       const allMovesSubmitted = submittedMoves === 0;
 
       // Determine the remaining and eliminated players if all moves are submitted
-      let result: { remainingPlayers: string[]; eliminatedPlayers: string[] } | "draw" | undefined;
+      let result: { remainingPlayers: string[]; eliminatedPlayers: string[] } = { remainingPlayers: [], eliminatedPlayers: [] };
       if (allMovesSubmitted) {
         result = determineWinner(gameLogs);
       }
 
-      if (result === "draw" || result === undefined) {
+      const { remainingPlayers, eliminatedPlayers } = result;
+
+      let payouts: { [key: number]: number } = {};
+
+      if (eliminatedPlayers.length > 0) {
+        // Calculate total pool and commission
+        const totalPool = game.buyIn * game.maxPlayers;
+        const commission = totalPool * commissionRate;
+        const remainingPool = totalPool - commission;
+
+        // Calculate bounty payouts based on rank
+        payouts = {
+          1: remainingPool * bountyDistribution[1],
+          2: remainingPool * bountyDistribution[2],
+          3: remainingPool * bountyDistribution[3],
+        };
+
+        for (const [index, playerId] of eliminatedPlayers.entries()) {
+          const rank = remainingPlayers.length + index + 1; // Rank starts from 1
+
+          if (rank <= Object.keys(bountyDistribution).length + 1) {
+            const payout = payouts[rank as keyof typeof payouts];
+            // Update the player's balance with their earnings
+            // await prisma.user.update({
+            //   where: { id: playerId },
+            //   data: { balance: { increment: payout } },
+            // });
+
+            // Notify the player of their rank and earnings
+            io.to(playerId).emit("S2C_ELIMINATED", {
+              message: `You have been eliminated and ranked #${rank}. You earned ${payout.toFixed(2)}!`,
+              gameId: data.gameId,
+              round: data.round,
+            });
+          }
+
+          // Update the player as eliminated in the game participants
+          // await prisma.gameParticipant.update({
+          //   where: {
+          //     gameId_playerId: {
+          //       gameId: data.gameId,
+          //       playerId: playerId,
+          //     },
+          //   },
+          //   data: {
+          //     eliminated: true,
+          //   },
+          // });
+        }
+      }
+
+      if (remainingPlayers.length === 1) {
+        // Only one player remains, declare them the winner
+        const winnerId = remainingPlayers[0];
+        await prisma.game.update({
+          where: { id: data.gameId },
+          data: { winner: winnerId, status: GameStatus.CLOSED },
+        });
+
+        // Update user status
+        for (const socketId in userStatus) {
+          const user = userStatus[socketId];
+          if (user?.gameId === data.gameId) {
+            userStatus[socketId] = { ...user, status: "ONLINE" };
+          }
+        }
+
+        try {
+          await prisma.game.update({
+            where: { id: data.gameId },
+            data: { status: GameStatus.CLOSED },
+          });
+        } catch (error) {
+          console.error(`Failed to update game status for game ${data.gameId}:`, error);
+          socket.emit("S2C_ERROR", {
+            message: "Failed to end the game. Please try again.",
+          });
+          return;
+        }
+
+        io.to(data.gameId).emit("S2C_GAME_ENDED", {
+          remainers: remainingPlayers,
+          losers: eliminatedPlayers,
+          bountyResults: [
+            ...eliminatedPlayers.map((playerId, index) => {
+              const rank = remainingPlayers.length + index + 1;
+              const payout = payouts[rank as keyof typeof payouts];
+              return { playerId, rank, payout: payout ? payout.toFixed(2) : "0.00" };
+            }),
+            {
+              playerId: winnerId,
+              rank: 1,
+              payout: payouts[1] ? payouts[1].toFixed(2) : "0.00",
+            },
+          ],
+        });
+      } else {
+        // Multiple players remain, continue the game
         io.to(data.gameId).emit("S2C_MOVE_SUBMITTED", {
           playerId: socket.user.userId,
           move: data.move,
@@ -225,74 +324,23 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
           round: data.round,
           submittedMoves,
           totalMoves: participantCount,
-          winner: null,
+          remainers: remainingPlayers,
+          losers: eliminatedPlayers,
+          bountyResults: eliminatedPlayers.map((playerId, index) => {
+            const rank = remainingPlayers.length + index + 1;
+            const payout = payouts[rank as keyof typeof payouts];
+            return { playerId, rank, payout: payout ? payout.toFixed(2) : "0.00" };
+          }),
         });
-      } else {
-        const { remainingPlayers, eliminatedPlayers } = result;
 
-        if (remainingPlayers.length === 1) {
-          // Only one player remains, declare them the winner
-          const winnerId = remainingPlayers[0];
-          await prisma.game.update({
-            where: { id: data.gameId },
-            data: { winner: winnerId, status: GameStatus.CLOSED },
-          });
-
-          io.to(data.gameId).emit("S2C_MOVE_SUBMITTED", {
-            playerId: socket.user.userId,
-            move: data.move,
+        // Notify the eliminated players
+        eliminatedPlayers.forEach((playerId) => {
+          io.to(playerId).emit("S2C_ELIMINATED", {
+            message: "You have been eliminated from the game.",
             gameId: data.gameId,
             round: data.round,
-            submittedMoves,
-            totalMoves: participantCount,
-            winner: winnerId,
           });
-
-          for (const socketId in userStatus) {
-            const user = userStatus[socketId];
-            if (user?.gameId === data.gameId) {
-              userStatus[socketId] = { ...user, status: "ONLINE" };
-            }
-          }
-      
-          try {
-            await prisma.game.update({
-              where: { id: data.gameId },
-              data: { status: GameStatus.CLOSED },
-            });
-          } catch (error) {
-            console.error(`Failed to update game status for game ${data.gameId}:`, error);
-            socket.emit("S2C_ERROR", {
-              message: "Failed to end the game. Please try again.",
-            });
-            return;
-          }
-      
-          io.to(data.gameId).emit("S2C_GAME_ENDED", {
-            winnerId: game.winner,
-          });
-        } else {
-          // Multiple players remain, continue the game
-          io.to(data.gameId).emit("S2C_MOVE_SUBMITTED", {
-            playerId: socket.user.userId,
-            move: data.move,
-            gameId: data.gameId,
-            round: data.round,
-            submittedMoves,
-            totalMoves: participantCount,
-            remainingPlayers,
-            eliminatedPlayers,
-          });
-
-          // Notify the eliminated players
-          eliminatedPlayers.forEach(playerId => {
-            io.to(playerId).emit("S2C_ELIMINATED", {
-              message: "You have been eliminated from the game.",
-              gameId: data.gameId,
-              round: data.round,
-            });
-          });
-        }
+        });
       }
     } catch (error) {
       console.error(`Failed to submit move:`, error);
@@ -303,40 +351,40 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
   });
 
   // Handle game result notification
-  socket.on("C2S_END_GAME", async (data: { gameId: string; winnerId: string }) => {
-    if (typeof data === "string") data = JSON.parse(data);
-    if (!data || !data.gameId || !data.winnerId) {
-      socket.emit("S2C_ERROR", {
-        message: "Invalid game end data. Game ID and winner ID are required.",
-      });
-      return;
-    }
-    console.log(`Game ${data?.gameId} ended. Winner is ${data?.winnerId}`);
-    // Update the status of all participants
-    for (const socketId in userStatus) {
-      const user = userStatus[socketId];
-      if (user?.gameId === data.gameId) {
-        userStatus[socketId] = { ...user, status: "ONLINE" };
-      }
-    }
+  // socket.on("C2S_END_GAME", async (data: { gameId: string; winnerId: string }) => {
+  //   if (typeof data === "string") data = JSON.parse(data);
+  //   if (!data || !data.gameId || !data.winnerId) {
+  //     socket.emit("S2C_ERROR", {
+  //       message: "Invalid game end data. Game ID and winner ID are required.",
+  //     });
+  //     return;
+  //   }
+  //   console.log(`Game ${data?.gameId} ended. Winner is ${data?.winnerId}`);
+  //   // Update the status of all participants
+  //   for (const socketId in userStatus) {
+  //     const user = userStatus[socketId];
+  //     if (user?.gameId === data.gameId) {
+  //       userStatus[socketId] = { ...user, status: "ONLINE" };
+  //     }
+  //   }
 
-    try {
-      await prisma.game.update({
-        where: { id: data.gameId },
-        data: { status: GameStatus.CLOSED },
-      });
-    } catch (error) {
-      console.error(`Failed to update game status for game ${data.gameId}:`, error);
-      socket.emit("S2C_ERROR", {
-        message: "Failed to end the game. Please try again.",
-      });
-      return;
-    }
+  //   try {
+  //     await prisma.game.update({
+  //       where: { id: data.gameId },
+  //       data: { status: GameStatus.CLOSED },
+  //     });
+  //   } catch (error) {
+  //     console.error(`Failed to update game status for game ${data.gameId}:`, error);
+  //     socket.emit("S2C_ERROR", {
+  //       message: "Failed to end the game. Please try again.",
+  //     });
+  //     return;
+  //   }
 
-    io.to(data.gameId).emit("S2C_GAME_ENDED", {
-      winnerId: data.winnerId,
-    });
-  });
+  //   io.to(data.gameId).emit("S2C_GAME_ENDED", {
+  //     winnerId: data.winnerId,
+  //   });
+  // });
 
   // Update game state
   socket.on("C2S_UPDATE_GAME_STATE", (data: { gameId: string; state: any }) => {
@@ -382,14 +430,16 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
         });
         return;
       }
-
-      // Remove the player from the game participants
-      await prisma.gameParticipant.delete({
+      // Update the player as eliminated in the game participants
+      await prisma.gameParticipant.update({
         where: {
           gameId_playerId: {
             gameId: data.gameId,
             playerId: socket.user.userId,
           },
+        },
+        data: {
+          eliminated: true,
         },
       });
 

@@ -43,12 +43,15 @@ const setupSocket = (io: Server) => {
 
         for (const game of games) {
           if (userId)
-            await prisma.gameParticipant.delete({
+            await prisma.gameParticipant.update({
               where: {
                 gameId_playerId: {
                   gameId: game.gameId,
                   playerId: userId,
                 },
+              },
+              data: {
+                eliminated: true,
               },
             });
 
@@ -57,7 +60,7 @@ const setupSocket = (io: Server) => {
           });
         }
       } catch (error) {
-        console.error(`Failed to remove player on disconnect:`, error);
+        console.error(`Failed to update player on disconnect:`, error);
       }
       delete userStatus[socket.id];
     });
