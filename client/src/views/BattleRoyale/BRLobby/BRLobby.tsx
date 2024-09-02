@@ -76,7 +76,7 @@ function BRLobby(props: BRLobbyProps) {
             <b>{game.participants.length}</b> / <b>{game.maxPlayers}</b>
           </div>
         </h3>
-        <div className="flexRow flex" style={{ alignSelf: "stretch", justifyContent: "space-around", gap: "0.5em", flexWrap: "wrap" }}>
+        <div className="flexRow flex" style={{ alignSelf: "stretch", alignContent: "flex-start", justifyContent: "space-around", gap: "0.5em", flexWrap: "wrap" }}>
           {new Array(game.maxPlayers).fill("").map((_, i) => {
             const item = i < game.participants.length && game.participants[i];
             const flexBasis = game.maxPlayers < 16 ? "40%" : "30%";
