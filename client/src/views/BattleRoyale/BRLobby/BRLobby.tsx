@@ -83,7 +83,7 @@ function BRLobby(props: BRLobbyProps) {
             console.log("item", item)
             if (!item) return <div key={i} style={{ flexBasis }} className="brLobbyPlayerMissing center">Waiting...</div>
             return (
-              <div key={i} style={{ flexBasis }} className="brLobbyPlayerPresent center">Player ID: {item.gameParticipant.id}</div>
+              <div key={i} style={{ flexBasis }} className="brLobbyPlayerPresent center">Player ID: {item.id}</div>
             );
           })}
         </div>

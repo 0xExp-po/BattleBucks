@@ -8,13 +8,11 @@ type Language = {
 };
 
 type Participant = {
-  gameParticipant: {
-    createdAt: string,
-    gameId: string,
-    id: number,
-    playerId: string,
-    updatedAt: string,
-  },
+  createdAt: string,
+  gameId: string,
+  id: number,
+  playerId: string,
+  updatedAt: string,
   playerId: string,
 }
 

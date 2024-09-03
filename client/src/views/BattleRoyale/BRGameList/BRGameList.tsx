@@ -54,7 +54,7 @@ function BRGameList(props: BRGameListProps) {
   let games = allGames;
   if (buyin) games = games.filter(game => game.buyIn === buyin);
   if (maxPlayers) games = games.filter(game => game.maxPlayers === maxPlayers);
-  games = games.sort((g1, g2) => g1.participants.length / g1.maxPlayers - g2.participants.length / g2.maxPlayers);
+  games = games.sort((g1, g2) => g2.participants.length / g2.maxPlayers - g1.participants.length / g1.maxPlayers);
 
   return (
     <div className="brGameList">

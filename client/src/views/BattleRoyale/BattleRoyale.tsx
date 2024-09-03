@@ -35,7 +35,7 @@ function BattleRoyale() {
     socket.on("S2C_PLAYER_JOINED", (r) => {
       console.log("player join", r)
 
-      game.current?.participants.push(r);
+      game.current?.participants.push(r.gameParticipant);
       rerender({});
 
       if (r.playerId !== telegram.tokenData?.userId)
