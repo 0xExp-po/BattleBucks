@@ -80,13 +80,32 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
         return;
       }
       console.log(`Player ${socket.user.userId} joining game ${data?.gameId}`);
+      const game = await prisma.game.findUnique({
+        where: {
+          id: data.gameId,
+        },
+        include: {
+          participants: true,
+        },
+      });
+      if (!game) {
+        socket.emit("S2C_ERROR", {
+          message: "Game not found.",
+        });
+        return;
+      }
+      if (game.participants.length + 1 > game.maxPlayers) {
+        socket.emit("S2C_ERROR", {
+          message: "The game is already full.",
+        });
+        return;
+      }
       let gameParticipant = await prisma.gameParticipant.findUnique({
         where: {
           gameId_playerId: {
             gameId: data.gameId,
             playerId: socket.user.userId,
           },
-          eliminated: false,
         },
       });
       if (!gameParticipant) {
@@ -96,22 +115,24 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
             playerId: userStatus[socket.id]?.userId || "",
           },
         });
+      } else {
+        await prisma.gameParticipant.update({
+          where: {
+            gameId_playerId: {
+              gameId: data.gameId,
+              playerId: socket.user.userId,
+            },
+          },
+          data: {
+            eliminated: false,
+          },
+        });
       }
       socket.join(data.gameId);
 
-      // Fetch all users in the same room
-      const usersInRoom = await prisma.gameParticipant.findMany({
-        where: { gameId: data.gameId, eliminated: false },
-        include: { player: true },
-      });
-
       io.to(data.gameId).emit("S2C_PLAYER_JOINED", {
         playerId: socket.user.userId,
-        gameParticipant,
-        usersInRoom: usersInRoom.map((participant) => ({
-          userId: participant.player.id,
-          username: participant.player.username,
-        })),
+        game,
       });
     } catch (error) {
       console.error(`Failed to join game:`, error);
@@ -421,6 +442,7 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
             gameId: data.gameId,
             playerId: socket.user.userId,
           },
+          eliminated: false,
         },
       });
 
@@ -443,10 +465,11 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
         },
       });
 
-      socket.leave(data.gameId);
       io.to(data.gameId).emit("S2C_PLAYER_LEFT", {
         playerId: socket.user.userId,
       });
+      socket.leave(data.gameId);
+      userStatus[socket.id] = { ...userStatus[socket.id], status: "ONLINE" };
 
       console.log(`Player ${socket.user.userId} successfully left game ${data.gameId}`);
     } catch (error) {
