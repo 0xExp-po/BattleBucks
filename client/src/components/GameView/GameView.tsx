@@ -4,9 +4,10 @@
 import Button from "../../components/Button/Button";
 import Avatar from "../../components/Avatar";
 import { AnimationControls, AnimationDefinition, motion, useAnimationControls } from "framer-motion";
-import { CSSProperties, useState } from "react";
+import { CSSProperties, useContext, useEffect, useState } from "react";
 import { timeout } from "../../utils/timeout";
 import "./GameView.scss"
+import SocketContext from "../../utils/socket";
 
 type Item = "rock" | "paper" | "scissors";
 
@@ -91,7 +92,14 @@ function determineResult(choice1: Item, choice2: Item) {
   return -1;
 }
 
-function GameView(props: { onGameEnd: (gameData: { result: number, buyin: number }) => void }) {
+interface GameViewProps {
+  game: Game;
+  onGameEnd: (gameData: { result: number, buyin: number }) => void;
+}
+
+function GameView(props: GameViewProps) {
+  const socket = useContext(SocketContext);
+
   const controlsR = useAnimationControls();
   const controlsP = useAnimationControls();
   const controlsS = useAnimationControls();
@@ -109,17 +117,37 @@ function GameView(props: { onGameEnd: (gameData: { result: number, buyin: number
     scissors: controlsS,
   };
 
+  useEffect(() => {
+    socket.on("S2C_MOVE_SUBMITTED", res => {
+      console.log("MOVE SUBMITTED", res)
+    });
+    socket.on("S2C_GAME_STATE_UPDATED", res => {
+      console.log("GAME STATE UPDATED", res)
+    });
+    socket.on("S2C_GAME_ENDED", res => {
+      console.log("GAME ENDED", res)
+    });
+
+    return () => {
+      socket.off("S2C_MOVE_SUBMITTED");
+      socket.off("S2C_GAME_STATE_UPDATED");
+      socket.off("S2C_GAME_ENDED");
+    };
+
+    //commenceBattle();
+  }, []);
+
   function onGameEnd(gameData: { result: number, buyin: number }) {
     props.onGameEnd(gameData);
   }
 
-  async function onChoose() {
+  async function onChooseItem() {
     if (!selectedItem)
       return;
     controls[selectedItem].start(styleSelectedFinal);
     setState(GameState.CHOSEN);
-    await timeout(2378);
-    commenceBattle();
+
+    socket.emit("C2S_SUBMIT_MOVE",);
   }
 
   function commenceBattle() {
@@ -203,10 +231,7 @@ function GameView(props: { onGameEnd: (gameData: { result: number, buyin: number
       </div>
 
       <div className="flexRow flex center" style={{ justifyContent: "flex-end" }}>
-        {/* <Button type="cancel" onClick={() => controls[selectedItem].start(hide)}>TEMP </Button>
-        <Button type="cancel" onClick={commenceBattle}>TEMP battle</Button>
-        <Button type="cancel" onClick={reset}>TEMP reset</Button> */}
-        <Button type="accept" disabled={isChosen} onClick={onChoose}>Choose</Button>
+        <Button type="accept" disabled={isChosen} onClick={onChooseItem}>Choose</Button>
       </div>
     </div>
   );

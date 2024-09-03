@@ -1,20 +1,16 @@
-import { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router";
-import { useTelegram } from "../../../utils/telegram";
+import { useEffect } from "react";
+import { useNavigate } from "react-router";
 import GameView from "../../../components/GameView/GameView";
 import MatchFoundOverlay from "../../../components/MatchFoundOverlay/MatchFoundOverlay";
 
-function BRGame() {
-  const location = useLocation();
+function BRGame(props: { game?: Game, player?: Participant }) {
   const navigate = useNavigate();
-  const [game, setGame] = useState(location.state.game);
-  const [showingTitle, setShowingTitle] = useState(false);
-  const telegram = useTelegram();
+  const game = props.game;
 
   useEffect(() => void !game && navigate("/"), []);
   if (!game) return <div></div>
 
-  return showingTitle ? <RoundShow trigger={showingTitle} player1={telegram.initData?.user.name || ""} player2={"Player2"} /> : <GameView onGameEnd={() => setShowingTitle(false)} />;
+  return <GameView game={game} onGameEnd={() => console.log("GAME END")} />;
 }
 
 function RoundShow(props: { trigger: boolean, player1: string, player2: string }) {
