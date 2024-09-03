@@ -86,7 +86,6 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
             gameId: data.gameId,
             playerId: socket.user.userId,
           },
-          eliminated: false,
         },
       });
       if (!gameParticipant) {
@@ -94,6 +93,18 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
           data: {
             gameId: data.gameId,
             playerId: userStatus[socket.id]?.userId || "",
+          },
+        });
+      } else {
+        await prisma.gameParticipant.update({
+          where: {
+            gameId_playerId: {
+              gameId: data.gameId,
+              playerId: socket.user.userId,
+            },
+          },
+          data: {
+            eliminated: false,
           },
         });
       }
@@ -421,6 +432,7 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
             gameId: data.gameId,
             playerId: socket.user.userId,
           },
+          eliminated: false,
         },
       });
 
@@ -443,10 +455,10 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
         },
       });
 
-      socket.leave(data.gameId);
       io.to(data.gameId).emit("S2C_PLAYER_LEFT", {
         playerId: socket.user.userId,
       });
+      socket.leave(data.gameId);
 
       console.log(`Player ${socket.user.userId} successfully left game ${data.gameId}`);
     } catch (error) {
