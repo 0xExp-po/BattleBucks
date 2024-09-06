@@ -70,6 +70,21 @@ model Game {
   gameHistory          GameLog[]
   status               GameStatus        @default(OPEN)
   winner               String?
+  currentRound         Int               @default(1)
+  brackets             Bracket[]
+}
+
+model Bracket {
+  id        Int     @id @default(autoincrement())
+  gameId    String
+  round     Int
+  position  Int
+  player1Id String?
+  player2Id String?
+  game      Game    @relation(fields: [gameId], references: [id])
+
+  @@unique([gameId, round, position])
+  @@index([gameId])
 }
 
 model GameParticipant {

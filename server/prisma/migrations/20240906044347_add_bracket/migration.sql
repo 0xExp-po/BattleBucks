@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Game" ADD COLUMN     "bracket" JSONB NOT NULL DEFAULT '[]',
+ADD COLUMN     "currentRound" INTEGER NOT NULL DEFAULT 1;

@@ -1,49 +1,57 @@
-export function determineWinner(gameLogs: { playerId: string; move: string }[]): { remainingPlayers: string[]; eliminatedPlayers: string[] } {
-  // Validate input
-  if (gameLogs.length < 2) {
-    throw new Error("At least two players are required to determine a winner.");
+import { PrismaClient, MoveType } from "@prisma/client";
+
+export function createBracket(playerCount: number): { round: number; position: number; player1Id: string | null; player2Id: string | null }[] {
+  const rounds = Math.log2(playerCount);
+  const bracket = [];
+
+  for (let round = 1; round <= rounds; round++) {
+    const matchesInRound = playerCount / Math.pow(2, round);
+    for (let position = 0; position < matchesInRound; position++) {
+      bracket.push({
+        round,
+        position,
+        player1Id: null,
+        player2Id: null,
+      });
+    }
   }
 
-  // Define the rules of the game
-  const rules: { [key: string]: string } = {
+  return bracket;
+}
+
+export async function advanceBracket(prisma: PrismaClient, gameId: string, round: number, winner: string): Promise<void> {
+  const currentMatchup = await prisma.bracket.findFirst({
+    where: { gameId, round, OR: [{ player1Id: winner }, { player2Id: winner }] },
+  });
+
+  if (!currentMatchup) {
+    throw new Error("Winner not found in the current round");
+  }
+
+  const nextRound = round + 1;
+  const nextPosition = Math.floor(currentMatchup.position / 2);
+
+  await prisma.bracket.update({
+    where: { gameId_round_position: { gameId, round: nextRound, position: nextPosition } },
+    data: {
+      [currentMatchup.position % 2 === 0 ? 'player1Id' : 'player2Id']: winner,
+    },
+  });
+}
+
+export function determineWinner(moves: { playerId: string; move: MoveType }[]): string {
+  const [move1, move2] = moves;
+
+  if (move1.move === move2.move) {
+    // In case of a tie, randomly choose a winner
+    return Math.random() < 0.5 ? move1.playerId : move2.playerId;
+  }
+
+  const rules: { [key in MoveType]: MoveType } = {
     ROCK: "SCISSORS",
     PAPER: "ROCK",
     SCISSORS: "PAPER",
   };
 
-  // Initialize maps to track wins and losses
-  const winCounts: { [key: string]: number } = {};
-  const lossCounts: { [key: string]: number } = {};
-
-  // Iterate over all possible matchups
-  for (let i = 0; i < gameLogs.length; i++) {
-    for (let j = i + 1; j < gameLogs.length; j++) {
-      const player1 = gameLogs[i];
-      const player2 = gameLogs[j];
-
-      if (player1.move === player2.move) {
-        continue; // It's a tie for this round
-      }
-
-      if (rules[player1.move] === player2.move) {
-        // Player 1 wins, Player 2 loses
-        winCounts[player1.playerId] = (winCounts[player1.playerId] || 0) + 1;
-        lossCounts[player2.playerId] = (lossCounts[player2.playerId] || 0) + 1;
-      } else {
-        // Player 2 wins, Player 1 loses
-        winCounts[player2.playerId] = (winCounts[player2.playerId] || 0) + 1;
-        lossCounts[player1.playerId] = (lossCounts[player1.playerId] || 0) + 1;
-      }
-    }
-  }
-  console.log("winCounts", winCounts);
-  console.log("lossCounts", lossCounts);
-
-  // Determine the players who are eliminated (lost all matchups)
-  const remainingPlayers = Object.keys(winCounts).filter((playerId) => winCounts[playerId] > 0);
-
-  // Determine remaining players (not eliminated)
-  const eliminatedPlayers = gameLogs.map((log) => log.playerId).filter((playerId) => !remainingPlayers.includes(playerId));
-
-  return { remainingPlayers, eliminatedPlayers };
+  return rules[move1.move] === move2.move ? move1.playerId : move2.playerId;
 }
