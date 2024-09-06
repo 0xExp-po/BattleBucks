@@ -19,7 +19,12 @@ export function createBracket(playerCount: number): { round: number; position: n
   return bracket;
 }
 
-export async function advanceBracket(prisma: PrismaClient, gameId: string, round: number, winner: string): Promise<void> {
+export async function advanceBracket(
+  prisma: PrismaClient,
+  gameId: string,
+  round: number,
+  winner: string
+): Promise<{ eliminatedPlayers: string[]; nextRound: number | null; isGameOver: boolean }> {
   const currentMatchup = await prisma.bracket.findFirst({
     where: { gameId, round, OR: [{ player1Id: winner }, { player2Id: winner }] },
   });
@@ -31,12 +36,60 @@ export async function advanceBracket(prisma: PrismaClient, gameId: string, round
   const nextRound = round + 1;
   const nextPosition = Math.floor(currentMatchup.position / 2);
 
-  await prisma.bracket.update({
+  // Check if next round bracket exists
+  const nextRoundBracket = await prisma.bracket.findUnique({
     where: { gameId_round_position: { gameId, round: nextRound, position: nextPosition } },
-    data: {
-      [currentMatchup.position % 2 === 0 ? 'player1Id' : 'player2Id']: winner,
-    },
   });
+
+  if (nextRoundBracket) {
+    // Advance winner to next round
+    await prisma.bracket.update({
+      where: { id: nextRoundBracket.id },
+      data: {
+        [nextRoundBracket.player1Id === null ? 'player1Id' : 'player2Id']: winner,
+      },
+    });
+  }
+
+  // Mark loser as eliminated
+  const loser = currentMatchup.player1Id === winner ? currentMatchup.player2Id : currentMatchup.player1Id;
+  
+  if (loser) {
+    await prisma.gameParticipant.update({
+      where: { gameId_playerId: { gameId, playerId: loser } },
+      data: { eliminated: true },
+    });
+  }
+
+  // Check if the round is complete
+  const roundComplete = await prisma.bracket.findMany({
+    where: { gameId, round, player1Id: null },
+  });
+
+  const game = await prisma.game.findUnique({
+    where: { id: gameId },
+    include: { brackets: true },
+  });
+
+  if (!game) throw new Error("Game not found");
+
+  const isGameOver = nextRound > Math.log2(game.maxPlayers);
+
+  if (roundComplete.length === game.brackets.filter((b) => b.round === round).length / 2) {
+    // Round is complete
+    return {
+      eliminatedPlayers: [loser!],
+      nextRound: isGameOver ? null : nextRound,
+      isGameOver,
+    };
+  } else {
+    // Round is not complete yet
+    return {
+      eliminatedPlayers: [loser!],
+      nextRound: null,
+      isGameOver: false,
+    };
+  }
 }
 
 export function determineWinner(moves: { playerId: string; move: MoveType }[]): string {
@@ -54,4 +107,39 @@ export function determineWinner(moves: { playerId: string; move: MoveType }[]): 
   };
 
   return rules[move1.move] === move2.move ? move1.playerId : move2.playerId;
+}
+
+export async function fillBracket(prisma: PrismaClient, gameId: string, playerId: string): Promise<void> {
+  const game = await prisma.game.findUnique({
+    where: { id: gameId },
+    include: { brackets: true },
+  });
+
+  if (!game) throw new Error("Game not found");
+
+  const emptyBracket = game.brackets.find(b => b.round === 1 && (b.player1Id === null || b.player2Id === null));
+
+  if (!emptyBracket) throw new Error("No empty bracket found");
+
+  await prisma.bracket.update({
+    where: { id: emptyBracket.id },
+    data: {
+      player1Id: emptyBracket.player1Id === null ? playerId : emptyBracket.player1Id,
+      player2Id: emptyBracket.player1Id !== null ? playerId : emptyBracket.player2Id,
+    },
+  });
+}
+
+export async function getRank(prisma: PrismaClient, gameId: string, playerId: string): Promise<number> {
+  const game = await prisma.game.findUnique({
+    where: { id: gameId },
+    include: { participants: true },
+  });
+
+  if (!game) throw new Error("Game not found");
+
+  const eliminatedPlayers = game.participants.filter(p => p.eliminated).length;
+  const totalPlayers = game.participants.length;
+
+  return totalPlayers - eliminatedPlayers + 1;
 }

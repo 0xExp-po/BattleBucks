@@ -3,14 +3,14 @@ import { userStatus } from "../userStatus";
 import { prisma } from "../../prisma";
 import { GameStatus, MoveType } from "@prisma/client";
 import { GameType } from "@prisma/client"; // Import GameType for validation
-import { determineWinner, createBracket, advanceBracket } from "../../utils/game";
+import { determineWinner, createBracket, advanceBracket, fillBracket, getRank } from "../../utils/game";
 import { CustomSocket } from "..";
 import { bountyDistribution, commissionRate } from "../../../config/settings.json";
 
 export const gameEvents = (socket: CustomSocket, io: Server) => {
   // Notify game created
   socket.on("C2S_CREATE_GAME", async (data: { buyIn?: number; maxPlayers: number; gameType: GameType }) => {
-    console.log(`Creating game with data:`, data);
+    console.log("Creating game");
     try {
       if (typeof data === "string") data = JSON.parse(data);
       if (!data) {
@@ -63,7 +63,10 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
         },
       });
 
-      // Fetch the updated game with participants
+      // Fill the bracket with the creator
+      await fillBracket(prisma, game.id, socket.user.userId);
+
+      // Fetch the updated game with participants and brackets
       const updatedGame = await prisma.game.findUnique({
         where: { id: game.id },
         include: {
@@ -74,7 +77,7 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
 
       io.emit("S2C_GAME_CREATED", { game: updatedGame });
     } catch (error) {
-      console.error(`Failed to create game:`, error);
+      console.error("Failed to create game");
       socket.emit("S2C_ERROR", {
         message: "Failed to create the game. Please try again.",
       });
@@ -83,7 +86,7 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
 
   // Handle player joining a game room
   socket.on("C2S_JOIN_GAME", async (data: { gameId: string }) => {
-    console.log("C2S_JOIN_GAME event received:", data);
+    console.log("C2S_JOIN_GAME event received");
     try {
       if (typeof data === "string") data = JSON.parse(data);
       if (!data || !data.gameId) {
@@ -93,7 +96,7 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
         });
         return;
       }
-      console.log(`Player ${socket.user.userId} joining game ${data?.gameId}`);
+      console.log("Player joining game");
       const game = await prisma.game.findUnique({
         where: {
           id: data.gameId,
@@ -103,7 +106,7 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
           brackets: true,
         },
       });
-      console.log("Game found:", game);
+      console.log("Game found");
       if (!game) {
         console.log("Error: Game not found");
         socket.emit("S2C_ERROR", {
@@ -120,7 +123,7 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
           },
         },
       });
-      console.log("Existing game participant:", gameParticipant);
+      console.log("Existing game participant");
       if (!gameParticipant) {
         console.log("Creating new game participant");
         if (game.participants.length + 1 > game.maxPlayers) {
@@ -133,11 +136,24 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
         gameParticipant = await prisma.gameParticipant.create({
           data: {
             gameId: data.gameId,
-            playerId: userStatus[socket.id]?.userId || "",
+            playerId: socket.user.userId,
           },
         });
+
+        // Fill the bracket with the new player
+        await fillBracket(prisma, data.gameId, socket.user.userId);
       } else {
         console.log("Updating existing game participant");
+        // Check if the participant is already in a bracket
+        const existingBracket = game.brackets.find(b => 
+          b.player1Id === socket.user.userId || b.player2Id === socket.user.userId
+        );
+        
+        if (!existingBracket) {
+          // If not in a bracket, fill one
+          await fillBracket(prisma, data.gameId, socket.user.userId);
+        }
+        
         await prisma.gameParticipant.update({
           where: {
             gameId_playerId: {
@@ -150,17 +166,26 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
           },
         });
       }
-      console.log("Joining socket to game room:", data.gameId);
+      console.log("Joining socket to game room");
       socket.join(data.gameId);
+
+      // Fetch the updated game with participants and brackets
+      const updatedGame = await prisma.game.findUnique({
+        where: { id: data.gameId },
+        include: {
+          participants: true,
+          brackets: true,
+        },
+      });
 
       console.log("Emitting S2C_PLAYER_JOINED event");
       io.to(data.gameId).emit("S2C_PLAYER_JOINED", {
         playerId: socket.user.userId,
-        game,
+        game: updatedGame,
       });
       console.log("C2S_JOIN_GAME process completed successfully");
     } catch (error) {
-      console.error(`Failed to join game:`, error);
+      console.error("Failed to join game");
       socket.emit("S2C_ERROR", {
         message: "Failed to join the game. Please try again.",
       });
@@ -202,14 +227,14 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
           currentRound: 1,
         },
       });
-      console.log(`Game ${data?.gameId} started`);
+      console.log("Game started");
       io.to(data.gameId).emit("S2C_GAME_STARTED", {
         gameId: data.gameId,
         bracket: game.brackets,
         currentRound: 1,
       });
     } catch (error) {
-      console.error(`Failed to update game status for game ${data.gameId}:`, error);
+      console.error("Failed to update game status");
       socket.emit("S2C_ERROR", {
         message: "Failed to start the game. Please try again.",
       });
@@ -219,18 +244,18 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
   // Handle move submission in a game
   socket.on("C2S_SUBMIT_MOVE", async (data: { gameId: string; move: MoveType; round: number }) => {
     try {
-      console.log("C2S_SUBMIT_MOVE event received:", data);
+      console.log("C2S_SUBMIT_MOVE event received");
       if (typeof data === "string") data = JSON.parse(data);
       if (!data || !data.gameId || !data.move || typeof data.round !== "number" || data.round < 0) {
         throw new Error("Invalid game ID, move, or round.");
       }
 
-      console.log("Fetching game data...");
+      console.log("Fetching game data");
       const game = await prisma.game.findUnique({
         where: { id: data.gameId },
         include: { participants: true, brackets: true },
       });
-      console.log("Game data fetched:", game);
+      console.log("Game data fetched");
 
       if (!game || game.status !== GameStatus.IN_PROGRESS || game.currentRound !== data.round) {
         throw new Error("Invalid game state or round.");
@@ -238,11 +263,11 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
 
       // Ensure the socket is in the game room
       if (!socket.rooms.has(data.gameId)) {
-        console.log(`Joining socket to game room: ${data.gameId}`);
+        console.log("Joining socket to game room");
         socket.join(data.gameId);
       }
 
-      console.log("Checking for existing move...");
+      console.log("Checking for existing move");
       // Check if the player has already submitted a move for this round
       const existingMove = await prisma.gameLog.findFirst({
         where: {
@@ -251,15 +276,15 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
           round: data.round,
         },
       });
-      console.log("Existing move:", existingMove);
+      console.log("Existing move checked");
 
       if (existingMove) {
         throw new Error("You have already submitted a move for this round.");
       }
 
-      console.log(`Player ${socket.user.userId} submitted move in game ${data.gameId}`);
+      console.log("Player submitted move in game");
 
-      console.log("Logging move in database...");
+      console.log("Logging move in database");
       // Log the move in the database
       await prisma.gameLog.create({
         data: {
@@ -271,19 +296,24 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
       });
       console.log("Move logged successfully");
 
-      console.log("Finding current matchup...");
+      console.log("Finding current matchup");
       const currentMatchup = game?.brackets.find(
         (bracket) =>
           bracket.round === data.round &&
           (bracket.player1Id === socket.user.userId || bracket.player2Id === socket.user.userId)
       );
-      console.log("Current matchup:", currentMatchup);
+      console.log("Current matchup found");
 
       if (!currentMatchup) {
         throw new Error("Player not found in current round matchups.");
       }
 
-      console.log("Fetching moves for matchup...");
+      // Check if both players are in the matchup
+      if (!currentMatchup.player1Id || !currentMatchup.player2Id) {
+        throw new Error("Matchup is not ready yet.");
+      }
+
+      console.log("Fetching moves for matchup");
       const movesForMatchup = await prisma.gameLog.findMany({
         where: {
           gameId: data.gameId,
@@ -291,63 +321,60 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
           playerId: { in: [currentMatchup.player1Id, currentMatchup.player2Id].filter((id): id is string => id !== null) },
         },
       });
+      console.log("Moves for matchup fetched");
       console.log("Moves for matchup:", movesForMatchup);
-
       if (movesForMatchup.length === 2) {
-        console.log("Both players have submitted moves. Determining winner...");
+        console.log("Both players have submitted moves. Determining winner");
         const winner = determineWinner(movesForMatchup);
         const loser = winner === currentMatchup.player1Id ? currentMatchup.player2Id : currentMatchup.player1Id;
-        console.log(`Winner: ${winner}, Loser: ${loser}`);
+        console.log("Winner and loser determined");
 
-        console.log("Updating bracket...");
-        // Update bracket
-        await advanceBracket(prisma, game.id, data.round, winner);
+        console.log("Updating bracket");
+        // Update bracket and get information about eliminated players
+        const { eliminatedPlayers, nextRound, isGameOver } = await advanceBracket(prisma, game.id, data.round, winner);
 
-        console.log("Checking if round is complete...");
-        // Check if the round is complete
-        const roundComplete = await prisma.bracket.findMany({
-          where: { gameId: data.gameId, round: data.round, player1Id: null },
+        // Notify about the matchup result
+        io.to(data.gameId).emit("S2C_MATCHUP_RESULT", {
+          gameId: data.gameId,
+          round: data.round,
+          winner: winner,
+          loser: loser,
         });
-        console.log("Round complete check:", roundComplete);
 
-        if (roundComplete.length === game.brackets.filter((b) => b.round === data.round).length / 2) {
-          console.log("Round is complete");
-          if (data.round === Math.log2(game.maxPlayers)) {
-            console.log("Game is over, we have a winner");
-            // Game is over, we have a winner
-            await prisma.game.update({
-              where: { id: data.gameId },
-              data: {
-                status: GameStatus.CLOSED,
-                winner: winner,
-              },
-            });
-
-            io.to(data.gameId).emit("S2C_GAME_ENDED", {
-              gameId: data.gameId,
-              winner: winner,
-            });
-          } else {
-            console.log("Moving to next round");
-            // Move to next round
-            await prisma.game.update({
-              where: { id: data.gameId },
-              data: { currentRound: data.round + 1 },
-            });
-
-            io.to(data.gameId).emit("S2C_ROUND_COMPLETE", {
-              gameId: data.gameId,
-              nextRound: data.round + 1,
-            });
-          }
-        } else {
-          console.log("Notifying about matchup result");
-          // Notify about the matchup result
-          io.to(data.gameId).emit("S2C_MATCHUP_RESULT", {
+        // Notify eliminated players
+        for (const eliminatedPlayer of eliminatedPlayers) {
+          const rank = await getRank(prisma, game.id, eliminatedPlayer);
+          io.to(eliminatedPlayer).emit("S2C_PLAYER_ELIMINATED", {
             gameId: data.gameId,
             round: data.round,
+            rank: rank,
+          });
+        }
+
+        if (isGameOver) {
+          // Game is over, we have a winner
+          await prisma.game.update({
+            where: { id: data.gameId },
+            data: {
+              status: GameStatus.CLOSED,
+              winner: winner,
+            },
+          });
+
+          io.to(data.gameId).emit("S2C_GAME_ENDED", {
+            gameId: data.gameId,
             winner: winner,
-            loser: loser,
+          });
+        } else if (nextRound) {
+          // Move to next round
+          await prisma.game.update({
+            where: { id: data.gameId },
+            data: { currentRound: nextRound },
+          });
+
+          io.to(data.gameId).emit("S2C_ROUND_COMPLETE", {
+            gameId: data.gameId,
+            nextRound: nextRound,
           });
         }
       } else {
@@ -360,7 +387,7 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
         });
       }
     } catch (error) {
-      console.error(`Failed to submit move:`, error);
+      console.error("Failed to submit move");
       socket.emit("S2C_ERROR", {
         message: error instanceof Error ? error.message : "Failed to submit the move. Please try again.",
       });
@@ -376,7 +403,7 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
       });
       return;
     }
-    console.log(`Updating game state for ${data.gameId}`);
+    console.log("Updating game state");
     io.to(data.gameId).emit("S2C_GAME_STATE_UPDATED", {
       gameId: data.gameId,
       state: data.state,
@@ -386,7 +413,7 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
   // Handle user leaving a game
   socket.on("C2S_LEAVE_GAME", async (data: { gameId: string }) => {
     if (typeof data === "string") data = JSON.parse(data);
-    console.log(`Player ${socket.user.userId} attempting to leave game ${data?.gameId}`);
+    console.log("Player attempting to leave game");
     try {
       if (!data || !data.gameId) {
         socket.emit("S2C_ERROR", {
