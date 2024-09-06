@@ -55,6 +55,7 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
         },
       });
 
+      socket.join(game.id);
       // Automatically add the creator to the game
       await prisma.gameParticipant.create({
         data: {
@@ -267,35 +268,6 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
         socket.join(data.gameId);
       }
 
-      console.log("Checking for existing move");
-      // Check if the player has already submitted a move for this round
-      const existingMove = await prisma.gameLog.findFirst({
-        where: {
-          gameId: data.gameId,
-          playerId: socket.user.userId,
-          round: data.round,
-        },
-      });
-      console.log("Existing move checked");
-
-      if (existingMove) {
-        throw new Error("You have already submitted a move for this round.");
-      }
-
-      console.log("Player submitted move in game");
-
-      console.log("Logging move in database");
-      // Log the move in the database
-      await prisma.gameLog.create({
-        data: {
-          gameId: data.gameId,
-          playerId: socket.user.userId,
-          move: data.move,
-          round: data.round,
-        },
-      });
-      console.log("Move logged successfully");
-
       console.log("Finding current matchup");
       const currentMatchup = game?.brackets.find(
         (bracket) =>
@@ -320,63 +292,161 @@ export const gameEvents = (socket: CustomSocket, io: Server) => {
           round: data.round,
           playerId: { in: [currentMatchup.player1Id, currentMatchup.player2Id].filter((id): id is string => id !== null) },
         },
+        orderBy: { createdAt: 'desc' },
+        take: 2,
       });
       console.log("Moves for matchup fetched");
-      console.log("Moves for matchup:", movesForMatchup);
-      if (movesForMatchup.length === 2) {
-        console.log("Both players have submitted moves. Determining winner");
-        const winner = determineWinner(movesForMatchup);
-        const loser = winner === currentMatchup.player1Id ? currentMatchup.player2Id : currentMatchup.player1Id;
-        console.log("Winner and loser determined");
 
-        console.log("Updating bracket");
-        // Update bracket and get information about eliminated players
-        const { eliminatedPlayers, nextRound, isGameOver } = await advanceBracket(prisma, game.id, data.round, winner);
+      // Check if it's the player's turn to submit a move
+      if (movesForMatchup.length > 0 && movesForMatchup[0].playerId === socket.user.userId) {
+        throw new Error("It's not your turn to submit a move.");
+      }
 
-        // Notify about the matchup result
-        io.to(data.gameId).emit("S2C_MATCHUP_RESULT", {
+      console.log("Logging move in database");
+      // Log the move in the database
+      await prisma.gameLog.create({
+        data: {
+          gameId: data.gameId,
+          playerId: socket.user.userId,
+          move: data.move,
+          round: data.round,
+        },
+      });
+      console.log("Move logged successfully");
+
+      // Fetch the updated moves after logging the new move
+      const updatedMovesForMatchup = await prisma.gameLog.findMany({
+        where: {
           gameId: data.gameId,
           round: data.round,
-          winner: winner,
-          loser: loser,
-        });
+          playerId: { in: [currentMatchup.player1Id, currentMatchup.player2Id].filter((id): id is string => id !== null) },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 2,
+      });
 
-        // Notify eliminated players
-        for (const eliminatedPlayer of eliminatedPlayers) {
-          const rank = await getRank(prisma, game.id, eliminatedPlayer);
-          io.to(eliminatedPlayer).emit("S2C_PLAYER_ELIMINATED", {
+      if (updatedMovesForMatchup.length === 2) {
+        console.log("Both players have submitted moves. Determining result");
+        const winner = determineWinner(updatedMovesForMatchup);
+
+        let result: {
+          gameId: string;
+          round: number;
+          playerId: string;
+          matchupId: number;
+          player1Id: string;
+          player2Id: string;
+          player1Move: MoveType;
+          player2Move: MoveType;
+          winner: string | null;
+          nextRound: number | null;
+          isGameOver: boolean;
+        };
+
+        if (winner === null) {
+          // It's a tie
+          console.log("It's a tie. Players will need to submit new moves");
+          result = {
             gameId: data.gameId,
             round: data.round,
-            rank: rank,
-          });
-        }
+            playerId: socket.user.userId,
+            matchupId: currentMatchup.id,
+            player1Id: currentMatchup.player1Id!,
+            player2Id: currentMatchup.player2Id!,
+            player1Move: updatedMovesForMatchup[0].move,
+            player2Move: updatedMovesForMatchup[1].move,
+            winner: null,
+            nextRound: null,
+            isGameOver: false,
+          };
+        } else {
+          const loser = winner === currentMatchup.player1Id ? currentMatchup.player2Id : currentMatchup.player1Id;
+          console.log("Winner determined");
 
-        if (isGameOver) {
-          // Game is over, we have a winner
-          await prisma.game.update({
-            where: { id: data.gameId },
-            data: {
-              status: GameStatus.CLOSED,
-              winner: winner,
-            },
-          });
+          console.log("Updating bracket");
+          const { nextRound, isGameOver } = await advanceBracket(prisma, game.id, data.round, winner);
 
-          io.to(data.gameId).emit("S2C_GAME_ENDED", {
+          result = {
             gameId: data.gameId,
+            round: data.round,
+            playerId: socket.user.userId,
+            matchupId: currentMatchup.id,
+            player1Id: currentMatchup.player1Id!,
+            player2Id: currentMatchup.player2Id!,
+            player1Move: updatedMovesForMatchup[0].move,
+            player2Move: updatedMovesForMatchup[1].move,
             winner: winner,
-          });
-        } else if (nextRound) {
-          // Move to next round
-          await prisma.game.update({
-            where: { id: data.gameId },
-            data: { currentRound: nextRound },
+            nextRound: nextRound,
+            isGameOver: isGameOver,
+          };
+
+          // Handle game over or next round logic
+          if (isGameOver) {
+            await prisma.game.update({
+              where: { id: data.gameId },
+              data: {
+                status: GameStatus.CLOSED,
+                winner: winner,
+              },
+            });
+          } else if (nextRound) {
+            await prisma.game.update({
+              where: { id: data.gameId },
+              data: { currentRound: nextRound },
+            });
+          }
+
+          // Check if all matchups in the round are complete
+          const allMatchupsComplete = await prisma.bracket.count({
+            where: { gameId: data.gameId, round: data.round, winnerId: { not: null } },
           });
 
-          io.to(data.gameId).emit("S2C_ROUND_COMPLETE", {
-            gameId: data.gameId,
-            nextRound: nextRound,
+          const totalMatchupsInRound = await prisma.bracket.count({
+            where: { gameId: data.gameId, round: data.round },
           });
+
+          if (allMatchupsComplete === totalMatchupsInRound) {
+            // All matchups in the round are complete, emit event to check for eliminated players
+            const losers = await prisma.gameParticipant.findMany({
+              where: { gameId: data.gameId, eliminated: true },
+              select: { playerId: true },
+            });
+
+            const loserIds = losers.map(loser => loser.playerId);
+            const loserRanks = await Promise.all(loserIds.map(loserId => getRank(prisma, data.gameId, loserId)));
+
+            const winners = await prisma.bracket.findMany({
+              where: { gameId: data.gameId, round: data.round, winnerId: { not: null } },
+              select: { winnerId: true },
+            });
+
+            const winnerIds = winners.map(winner => winner.winnerId!);
+            if(nextRound == null) {
+              io.to(data.gameId).emit("S2C_GAME_ENDED", {
+                gameId: data.gameId,
+                round: data.round,
+                winners: winnerIds,
+                losers: loserIds.map((id, index) => ({ id, rank: loserRanks[index] })),
+              });
+              return;
+            }
+            const nextRoundBrackets = await prisma.bracket.findMany({
+              where: { gameId: data.gameId, round: nextRound },
+            });
+
+            io.to(data.gameId).emit("S2C_ROUND_COMPLETE", {
+              gameId: data.gameId,
+              round: data.round,
+              nextRound: nextRound,
+              winners: winnerIds,
+              losers: loserIds.map((id, index) => ({ id, rank: loserRanks[index] })),
+              nextRoundBrackets: nextRoundBrackets,
+            });
+          }
         }
+
+        // Emit the result to all players in the game
+        io.to(data.gameId).emit("S2C_MOVE_SUBMITTED", result);
       } else {
         console.log("Notifying that a move has been submitted");
         // Notify that a move has been submitted
