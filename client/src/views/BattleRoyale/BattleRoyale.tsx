@@ -1,9 +1,8 @@
-import { useNavigate, useRoutes } from "react-router";
+import { useLocation, useNavigate, useRoutes } from "react-router";
 import { AnimatePresence } from "framer-motion";
-import { io } from "socket.io-client";
 import { useTelegram } from "../../utils/telegram";
-import React, { useContext, useEffect, useState } from "react";
-import SocketContext, { SocketBaseUrl } from "../../utils/socket";
+import React, { useContext, useEffect, useRef, useState } from "react";
+import SocketContext from "../../utils/socket";
 import ViewTransition from "../../components/ViewTransition/ViewTransition";
 import BRCreate from "./BRCreate/BRCreate";
 import BRGame from "./BRGame/BRGame";
@@ -13,53 +12,89 @@ import BRLobby from "./BRLobby/BRLobby";
 function BattleRoyale() {
   const socket = useContext(SocketContext);
   const telegram = useTelegram();
-  const navigate = useNavigate();
+  const n = useNavigate();
+  const location = useLocation();
 
-  const [currentOpponent, setCurrentOpponent] = useState("BROpponent");
+  const game = useRef<Game | undefined>(location.state?.game);
+  const player = useRef<Participant | undefined>(location.state?.player);
+  const gameStarted = useRef<boolean>(location.state?.gameStarted);
+
+  const [_, rerender] = useState({});
+
+  // navigate wrapper to preserve state
+  const navigate = (to: string) => {
+    console.log({ state: { game: game.current, player: player.current, gameStarted: gameStarted.current } })
+    n(to, { state: { game: game.current, player: player.current, gameStarted: gameStarted.current } });
+  }
 
   useEffect(() => {
     socket.on("S2C_ERROR", (e) => {
       console.error(e);
     });
-    return () => {
-      socket.off("S2C_ERROR");
-    }
-  }, []);
-
-  // game join
-  const onGameJoin = (game: Game) => {
-    if (!telegram.initData) return;
-
-    console.log("joined game", game);
-    console.log("attempting to join to nsp")
 
     socket.on("S2C_PLAYER_JOINED", (r) => {
-      console.log("player join", r);
-      if (r.playerId !== socket.id)
+      console.log("player join", r)
+
+      game.current?.participants.push(r.gameParticipant);
+      rerender({});
+
+      if (r.playerId !== telegram.tokenData?.userId)
         return;
 
-      console.info("confirmed", game.id);
-      navigate("/game", { state: { game: game } });
+      player.current = r;
+      console.log("confirmed game", game.current, ", entering lobby...");
+      navigate("/br/lobby");
     });
 
     socket.on("S2C_GAME_STARTED", r => {
-      console.log("GAME STARTED RECEIVED", r)
-
-      const game = {
-        id: "gameid"
-      };
-
-      navigate("/br/game", { state: { game } });
+      console.log("GAME STARTED RECEIVED", r);
+      gameStarted.current = true;
+      navigate("/br/lobby");
     });
 
-    socket.emit("C2S_JOIN_GAME", { gameId: game.id });
-    //navigate("/br/lobby");
+    return () => {
+      socket.off("S2C_ERROR");
+      socket.off("S2C_PLAYER_JOINED");
+      socket.off("S2C_GAME_STARTED");
+    };
+  }, [rerender]);
+
+  // game join
+  const onGameJoin = (g: Game) => {
+    if (!telegram.initData) return;
+
+    console.log("joining game", g);
+    game.current = g;
+    player.current = undefined;
+
+    socket.emit("C2S_JOIN_GAME", { gameId: g.id });
   };
+
+  // game create
+  const onGameCreate = (g: Game) => {
+    console.log("created game", g)
+    if (!g) {
+      console.error("NO GAME");
+      return;
+    }
+    game.current = g;
+    player.current = undefined;
+
+    navigate("/br/lobby");
+  };
+
+  const leaveGame = () => {
+    socket.emit("C2S_LEAVE_GAME", { gameId: game.current?.id });
+    game.current = undefined;
+    player.current = undefined;
+    gameStarted.current = false;
+    navigate("/br/games");
+  }
 
   const element = useRoutes([
     {
       path: "game",
-      element: <ViewTransition><BRGame /></ViewTransition>
+      element: <ViewTransition><BRGame game={game.current} player={player.current} /></ViewTransition>
     },
     {
       path: "games",
@@ -67,11 +102,11 @@ function BattleRoyale() {
     },
     {
       path: "create",
-      element: <ViewTransition><BRCreate onGameCreate={() => console.log("oof")} /></ViewTransition>
+      element: <ViewTransition><BRCreate onGameCreate={onGameCreate} /></ViewTransition>
     },
     {
       path: "lobby",
-      element: <ViewTransition><BRLobby /></ViewTransition>
+      element: <ViewTransition><BRLobby onLeave={leaveGame} gameReady={gameStarted.current} onGameReady={() => navigate("/br/game")} game={game.current} /></ViewTransition>
     },
   ]);
 

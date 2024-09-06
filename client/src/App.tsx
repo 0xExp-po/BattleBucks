@@ -7,11 +7,11 @@ import VersusLobby from "./views/VersusLobby";
 import VersusBuyin from "./views/VersusBuyin/VersusBuyin";
 import GameEnd from "./views/GameEnd";
 import ViewTransition from "./components/ViewTransition/ViewTransition";
+import BattleRoyale from "./views/BattleRoyale/BattleRoyale";
 import { useRoutes } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { SocketProvider } from "./utils/socket";
 import { useTelegram } from "./utils/telegram";
-import BattleRoyale from "./views/BattleRoyale/BattleRoyale";
 
 function App() {
   const element = useRoutes([

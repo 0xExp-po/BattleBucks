@@ -37,7 +37,7 @@ function Chooser(props: ChooserProps) {
       <label className="flexRow center outline2" htmlFor={props.name}>{props.label}</label>
       <select name={props.name} value={value} onClick={onChange} onMouseDown={e => e.preventDefault()} onChange={() => {}} className="chooserOption">
         {options.map(option => {
-          return <option key={option.value} value={option.value}>{option.label || option.value}</option>;
+          return <option key={option.value || "undefined"} value={option.value}>{option.label || option.value}</option>;
         })}
       </select>
     </div>

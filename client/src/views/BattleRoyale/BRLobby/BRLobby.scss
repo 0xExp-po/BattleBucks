@@ -2,6 +2,24 @@
 
 .brLobby {
     background-color: $brLobbiesBg;
-    padding: 1em;
     gap: 1em;
+}
+
+.brLobbyPlayerPresent {
+    border-radius: 10px;
+    border: 2px solid white;
+    background-color: white;
+    color: black;
+    font-weight: bold;
+    min-height: 2em;
+    height: fit-content;
+    align-content: center;;
+}
+
+.brLobbyPlayerMissing {
+    border-radius: 10px;
+    border: 2px dashed white;
+    min-height: 2em;
+    height: fit-content;
+    align-content: center;;
 }

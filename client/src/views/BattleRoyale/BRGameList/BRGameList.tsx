@@ -54,21 +54,21 @@ function BRGameList(props: BRGameListProps) {
   let games = allGames;
   if (buyin) games = games.filter(game => game.buyIn === buyin);
   if (maxPlayers) games = games.filter(game => game.maxPlayers === maxPlayers);
-  games = games.sort((g1, g2) => g1.participants.length / g1.maxPlayers - g2.participants.length / g2.maxPlayers);
+  games = games.sort((g1, g2) => g2.participants.length / g2.maxPlayers - g1.participants.length / g1.maxPlayers);
 
   return (
     <div className="brGameList">
       <div className="flexCol flex" style={{ overflow: "auto" }}>
         <div className="brGameListHeader flexCol">
           <div className="flexRow">
-            <div className="flex center"><Back /></div>
+            <div className="flex center"><Back to="/" /></div>
             <h3 className="outline2" style={{ fontFamily: "Bangers", flex: 5 }}>Battle Royale</h3>
             <div className="flex"></div>
           </div>
           <div className="flexCol center">
             <div className="flexRow" style={{ gap: "1em" }}>
               <Chooser label="Buyin:" options={["All", 1, 2]} onChange={(e) => setBuyin(typeof e === "number" ? e : undefined)} />
-              <Chooser label="Max Players:" options={["All", 8, 16, 32, 64]} onChange={e => setMaxPlayers(typeof e === "number" ? e : undefined)} />
+              <Chooser label="Max Players:" options={["All", 4, 8, 16, 32, 64]} onChange={e => setMaxPlayers(typeof e === "number" ? e : undefined)} />
             </div>
           </div>
         </div>
