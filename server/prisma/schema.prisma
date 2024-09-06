@@ -81,6 +81,7 @@ model Bracket {
   position  Int
   player1Id String?
   player2Id String?
+  winnerId  String?
   game      Game    @relation(fields: [gameId], references: [id])
 
   @@unique([gameId, round, position])
