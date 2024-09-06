@@ -33,6 +33,12 @@ export async function advanceBracket(
     throw new Error("Winner not found in the current round");
   }
 
+  // Update the current bracket with the winner
+  await prisma.bracket.update({
+    where: { id: currentMatchup.id },
+    data: { winnerId: winner },
+  });
+
   const nextRound = round + 1;
   const nextPosition = Math.floor(currentMatchup.position / 2);
 
@@ -62,8 +68,8 @@ export async function advanceBracket(
   }
 
   // Check if the round is complete
-  const roundComplete = await prisma.bracket.findMany({
-    where: { gameId, round, player1Id: null },
+  const roundComplete = await prisma.bracket.count({
+    where: { gameId, round, winnerId: { not: null } },
   });
 
   const game = await prisma.game.findUnique({
@@ -73,9 +79,10 @@ export async function advanceBracket(
 
   if (!game) throw new Error("Game not found");
 
+  const totalMatchesInRound = game.brackets.filter((b) => b.round === round).length;
   const isGameOver = nextRound > Math.log2(game.maxPlayers);
 
-  if (roundComplete.length === game.brackets.filter((b) => b.round === round).length / 2) {
+  if (roundComplete === totalMatchesInRound) {
     // Round is complete
     return {
       eliminatedPlayers: [loser!],
@@ -92,12 +99,12 @@ export async function advanceBracket(
   }
 }
 
-export function determineWinner(moves: { playerId: string; move: MoveType }[]): string {
+export function determineWinner(moves: { playerId: string; move: MoveType }[]): string | null {
   const [move1, move2] = moves;
 
   if (move1.move === move2.move) {
-    // In case of a tie, randomly choose a winner
-    return Math.random() < 0.5 ? move1.playerId : move2.playerId;
+    // In case of a tie, return null to indicate a draw
+    return null;
   }
 
   const rules: { [key in MoveType]: MoveType } = {
